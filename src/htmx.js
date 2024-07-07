@@ -165,6 +165,12 @@ var htmx = (function() {
        */
       inlineScriptNonce: '',
       /**
+       * If set, disables inlineScriptNonce and nonce in script tags returned from hx requests matching returned HX-Nonce header will be replaced instead.
+       * @type string
+       * @default ''
+       */
+      safeInlineScriptNonce: '',   
+      /**
        * If set, the nonce will be added to inline styles.
        * @type string
        * @default ''
@@ -546,7 +552,7 @@ var htmx = (function() {
     })
     newScript.textContent = script.textContent
     newScript.async = false
-    if (htmx.config.inlineScriptNonce) {
+    if (htmx.config.inlineScriptNonce && !htmx.config.safeInlineScriptNonce) {
       newScript.nonce = htmx.config.inlineScriptNonce
     }
     return newScript
@@ -3134,7 +3140,11 @@ var htmx = (function() {
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
         triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', details)
-        const fragment = makeFragment(this.response)
+        let response = this.response;
+        if (hasHeader(this, /HX-Nonce:/i)) {
+          response = replaceNonce(response,this.getResponseHeader('HX-Nonce'))
+        }
+        const fragment = makeFragment(response)
         /** @type ParentNode */
         const content = fragment.querySelector('[hx-history-elt],[data-hx-history-elt]') || fragment
         const historyElement = getHistoryElement()
@@ -4548,6 +4558,17 @@ var htmx = (function() {
   }
 
   /**
+   * Replace AJAX response nonce with original nonce from page load
+   * @param {string} content
+   * @param {string} nonce
+   */
+  function replaceNonce(content, nonce) {
+    const rawReg = `nonce="${nonce.replace(/[\\\[\]\/^*.+?$(){}'#:!=|]/g, "\\$&")}"`
+    const Reg = new RegExp(rawReg,"g")
+    return content.replace(Reg,`nonce="${htmx.config.safeInlineScriptNonce}"`)
+  }
+
+  /**
    * @param {Element} elt
    * @param {HtmxResponseInfo} responseInfo
    */
@@ -4660,6 +4681,10 @@ var htmx = (function() {
       withExtensions(elt, function(extension) {
         serverResponse = extension.transformResponse(serverResponse, xhr, elt)
       })
+
+      if (hasHeader(xhr, /HX-Nonce:/i)) {
+        serverResponse = replaceNonce(serverResponse,xhr.getResponseHeader('HX-Nonce'))
+      }
 
       // Save current page if there will be a history update
       if (historyUpdate.type) {
