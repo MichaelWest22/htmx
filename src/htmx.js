@@ -169,7 +169,7 @@ var htmx = (function() {
        * @type string
        * @default ''
        */
-      safeInlineScriptNonce: '',   
+      safeInlineScriptNonce: '',
       /**
        * If set, the nonce will be added to inline styles.
        * @type string
@@ -3140,9 +3140,9 @@ var htmx = (function() {
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
         triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', details)
-        let response = this.response;
+        let response = this.response
         if (hasHeader(this, /HX-Nonce:/i)) {
-          response = replaceNonce(response,this.getResponseHeader('HX-Nonce'))
+          response = replaceNonce(response, this.getResponseHeader('HX-Nonce'))
         }
         const fragment = makeFragment(response)
         /** @type ParentNode */
@@ -4563,9 +4563,8 @@ var htmx = (function() {
    * @param {string} nonce
    */
   function replaceNonce(content, nonce) {
-    const rawReg = `nonce="${nonce.replace(/[\\\[\]\/^*.+?$(){}'#:!=|]/g, "\\$&")}"`
-    const Reg = new RegExp(rawReg,"g")
-    return content.replace(Reg,`nonce="${htmx.config.safeInlineScriptNonce}"`)
+    const escapedRegex = new RegExp(`nonce="${nonce.replace(/[\\\[\]\/^*.+?$(){}'#:!=|]/g, '\\$&')}"`, 'g')
+    return content.replace(escapedRegex, `nonce="${htmx.config.safeInlineScriptNonce}"`)
   }
 
   /**
@@ -4683,7 +4682,7 @@ var htmx = (function() {
       })
 
       if (hasHeader(xhr, /HX-Nonce:/i)) {
-        serverResponse = replaceNonce(serverResponse,xhr.getResponseHeader('HX-Nonce'))
+        serverResponse = replaceNonce(serverResponse, xhr.getResponseHeader('HX-Nonce'))
       }
 
       // Save current page if there will be a history update
