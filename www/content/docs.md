@@ -1018,6 +1018,7 @@ htmx includes a number of useful headers in requests:
 htmx supports some htmx-specific response headers:
 
 * [`HX-Location`](@/headers/hx-location.md) - allows you to do a client-side redirect that does not do a full page reload
+* [`HX-Nonce`](@/headers/hx-nonce.md) - allows safer return of inline scripts when safeInlineScriptNonce config set
 * [`HX-Push-Url`](@/headers/hx-push-url.md) - pushes a new url into the history stack
 * `HX-Redirect` - can be used to do a client-side redirect to a new location
 * `HX-Refresh` - if set to "true" the client-side will do a full refresh of the page
@@ -1610,6 +1611,8 @@ This tells the browser "Only allow connections to the original (source) domain".
 `htmx.config.selfRequestsOnly`, but a layered approach to security is warranted and, in fact, ideal, when dealing
 with application security.
 
+If you need to support inline script tags you can use [`HX-Nonce`](@/headers/hx-nonce.md) to safely support them or disable them by setting htmx.config.allowScriptTags to false 
+
 A full discussion of CSPs is beyond the scope of this document, but the [MDN Article](https://developer.mozilla.org/en-US/docs/Web/HTTP/CSP) provide a good jumping off point
 for exploring this topic.
 
@@ -1637,6 +1640,7 @@ listed below:
 | `htmx.config.allowEval`               | defaults to `true`, can be used to disable htmx's use of eval for certain features (e.g. trigger filters)                                                                                                                                                                                                                                         |
 | `htmx.config.allowScriptTags`         | defaults to `true`, determines if htmx will process script tags found in new content                                                                                                                                                                                                                                                              |
 | `htmx.config.inlineScriptNonce`       | defaults to `''`, meaning that no nonce will be added to inline scripts                                                                                                                                                                                                                                                                           |
+| `htmx.config.safeInlineScriptNonce`   | defaults to `''`, that overrides inlineScriptNonce and enforces responding with HX-Nonce header for inline scripts                                                                                                                                                                                                                                |
 | `htmx.config.attributesToSettle`      | defaults to `["class", "style", "width", "height"]`, the attributes to settle during the settling phase                                                                                                                                                                                                                                           |
 | `htmx.config.inlineStyleNonce`        | defaults to `''`, meaning that no nonce will be added to inline styles                                                                                                                                                                                                                                                                            |
 | `htmx.config.useTemplateFragments`    | defaults to `false`, HTML template tags for parsing content from the server (not IE11 compatible!)                                                                                                                                                                                                                                                |

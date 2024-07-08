@@ -165,7 +165,7 @@ var htmx = (function() {
        */
       inlineScriptNonce: '',
       /**
-       * If set, disables inlineScriptNonce and nonce in script tags returned from hx requests matching returned HX-Nonce header will be replaced instead.
+       * If set, disables inlineScriptNonce and enforces responding with HX-Nonce header for inline scripts
        * @type string
        * @default ''
        */

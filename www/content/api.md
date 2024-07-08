@@ -120,6 +120,7 @@ Note that using a [meta tag](@/docs.md#config) is the preferred mechanism for se
 * `allowEval:true` - boolean: allows the use of eval-like functionality in htmx, to enable `hx-vars`, trigger conditions & script tag evaluation.  Can be set to `false` for CSP compatibility.
 * `allowScriptTags:true` - boolean: allows script tags to be evaluated in new content
 * `inlineScriptNonce:''` - string: the [nonce](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/nonce) to add to inline scripts
+* `SafeInlineScriptNonce:''` - string: the [nonce](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/nonce) that overrides inlineScriptNonce and enforces responding with HX-Nonce header for inline scripts
 * `inlineStyleNonce:''` - string: the [nonce](https://developer.mozilla.org/docs/Web/HTML/Global_attributes/nonce) to add to inline styles
 * `withCredentials:false` - boolean: allow cross-site Access-Control requests using credentials such as cookies, authorization headers or TLS client certificates
 * `timeout:0` - int: the number of milliseconds a request can take before automatically being terminated
