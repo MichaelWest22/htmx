@@ -130,6 +130,16 @@ By using the syntax `every <timing declaration>` you can have an element poll pe
 This example will issue a `GET` to the `/latest_updates` URL every second and swap the results into
 the innerHTML of this div.
 
+By using the syntax `every <time declaration> for <time declaration>` you can limit the time it polls for:
+
+```html
+<div hx-get="/latest_updates" hx-trigger="every 1s for 60m">
+  Nothing Yet!
+</div>
+```
+
+This example is the same as the before except it will stop polling after 1 hour.
+
 If you want to add a filter to polling, it should be added *after* the poll declaration:
 
 ```html
