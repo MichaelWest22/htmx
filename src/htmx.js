@@ -700,6 +700,7 @@ var htmx = (function() {
    * @property {string} [path]
    * @property {string} [verb]
    * @property {boolean} [polling]
+   * @property {number} [pollCount]
    * @property {HTMLButtonElement|HTMLInputElement|null} [lastButtonClicked]
    * @property {number} [requestCount]
    * @property {XMLHttpRequest} [xhr]
@@ -2129,6 +2130,11 @@ var htmx = (function() {
           consumeUntil(tokens, NOT_WHITESPACE)
           every.pollInterval = parseInterval(consumeUntil(tokens, /[,\[\s]/))
           consumeUntil(tokens, NOT_WHITESPACE)
+          if (tokens[0] == 'for') {
+            tokens.shift()
+            consumeUntil(tokens, NOT_WHITESPACE)
+            every.pollFor = parseInterval(consumeUntil(tokens, /[,\[\s]/))
+          }
           var eventFilter = maybeGenerateConditional(elt, tokens, 'event')
           if (eventFilter) {
             every.eventFilter = eventFilter
@@ -2249,7 +2255,9 @@ var htmx = (function() {
         }))) {
           handler(elt)
         }
-        processPolling(elt, handler, spec)
+        if (!nodeData.pollCount || --nodeData.pollCount > 0) {
+          processPolling(elt, handler, spec)
+        }
       }
     }, spec.pollInterval)
   }
@@ -2596,6 +2604,9 @@ var htmx = (function() {
       }
     } else if (triggerSpec.pollInterval > 0) {
       nodeData.polling = true
+      if (triggerSpec.pollFor) {
+        nodeData.pollCount = Math.floor(triggerSpec.pollFor/triggerSpec.pollInterval)
+      }
       processPolling(asElement(elt), handler, triggerSpec)
     } else {
       addEventListener(elt, handler, nodeData, triggerSpec)
@@ -5022,6 +5033,7 @@ var htmx = (function() {
  * @typedef {Object} HtmxTriggerSpecification
  * @property {string} trigger
  * @property {number} [pollInterval]
+ * @property {number} [pollFor]
  * @property {ConditionalFunction} [eventFilter]
  * @property {boolean} [changed]
  * @property {boolean} [once]
