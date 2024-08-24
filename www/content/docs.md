@@ -306,8 +306,9 @@ This tells htmx
 
 > Every 2 seconds, issue a GET to /news and load the response into the div
 
-If you want to stop polling from a server response you can respond with the HTTP response code [`286`](https://en.wikipedia.org/wiki/86_(term))
-and the element will cancel the polling.
+If you want to stop polling from a server response you can respond with the HTTP response code [`286`](https://en.wikipedia.org/wiki/86_(term)) and the element will cancel the polling.
+There is an option in hx-trigger to set the maximum period you want the polling to run for.
+Finally you can use the event [htmx:cancelPolling](@/events.md#htmx:cancelPolling) to control canceling of the polling.
 
 #### Load Polling {#load_polling}
 

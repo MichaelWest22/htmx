@@ -2605,7 +2605,7 @@ var htmx = (function() {
     } else if (triggerSpec.pollInterval > 0) {
       nodeData.polling = true
       if (triggerSpec.pollFor) {
-        nodeData.pollCount = Math.floor(triggerSpec.pollFor/triggerSpec.pollInterval)
+        nodeData.pollCount = Math.floor(triggerSpec.pollFor / triggerSpec.pollInterval)
       }
       processPolling(asElement(elt), handler, triggerSpec)
     } else {
@@ -4685,7 +4685,7 @@ var htmx = (function() {
 
     // check if polling should be cancelled
     if (getInternalData(elt).timeout &&
-        (xhr.status === 286 || !triggerEvent(elt, 'htmx:cancelPolling', responseInfo)) {
+        (xhr.status === 286 || !triggerEvent(elt, 'htmx:cancelPolling', responseInfo))) {
       cancelPolling(elt)
     }
 

@@ -25,6 +25,27 @@ describe('Core htmx Events', function() {
     }
   })
 
+  it('htmx:cancelPolling event aborts polling', function(done) {
+    var requests = 0
+    var handler = htmx.on('htmx:cancelPolling', function(evt) {
+      if (requests > 4) {
+        evt.preventDefault()
+      }
+    })
+    this.server.respondWith('GET', '/test', function(xhr) {
+      requests++
+      xhr.respond(200, {}, 'Requests: ' + requests)
+    })
+    this.server.autoRespond = true
+    this.server.autoRespondAfter = 0
+    make('<div hx-trigger="every 10ms" hx-get="/test"/>')
+    setTimeout(function() {
+      htmx.off('htmx:cancelPolling', handler)
+      requests.should.equal(5)
+      done()
+    }, 100)
+  })
+
   it('htmx:configRequest allows attribute addition', function() {
     var handler = htmx.on('htmx:configRequest', function(evt) {
       evt.detail.parameters.param = 'true'
