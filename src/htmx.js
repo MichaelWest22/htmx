@@ -4649,11 +4649,7 @@ var htmx = (function() {
     }
 
     if (hasHeader(xhr, /HX-Retarget:/i)) {
-      if (xhr.getResponseHeader('HX-Retarget') === 'this') {
-        responseInfo.target = elt
-      } else {
-        responseInfo.target = asElement(querySelectorExt(elt, xhr.getResponseHeader('HX-Retarget')))
-      }
+      responseInfo.target = asElement(querySelectorExt(elt, xhr.getResponseHeader('HX-Retarget')))
     }
 
     const historyUpdate = determineHistoryUpdates(elt, responseInfo)
@@ -4673,14 +4669,7 @@ var htmx = (function() {
 
     // response headers override response handling config
     if (hasHeader(xhr, /HX-Retarget:/i)) {
-      if (xhr.getResponseHeader('HX-Retarget') === 'this') {
-        responseInfo.target = elt
-      } else {
-        responseInfo.target = asElement(querySelectorExt(elt, xhr.getResponseHeader('HX-Retarget')))
-      }
-    }
-    if (hasHeader(xhr, /HX-Reswap:/i)) {
-      swapOverride = xhr.getResponseHeader('HX-Reswap')
+      responseInfo.target = asElement(querySelectorExt(elt, xhr.getResponseHeader('HX-Retarget')))
     }
 
     var serverResponse = xhr.response
