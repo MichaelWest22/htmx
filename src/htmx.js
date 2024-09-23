@@ -3671,9 +3671,10 @@ var htmx = (function() {
    * @param {XMLHttpRequest} xhr
    * @param {Element} elt
    * @param {FormData} filteredParameters
+   * @param {boolean=} useFormData
    * @returns {*|string|null}
    */
-  function encodeParamsForBody(xhr, elt, filteredParameters) {
+  function encodeParamsForBody(xhr, elt, filteredParameters, useFormData) {
     let encodedParameters = null
     withExtensions(elt, function(extension) {
       if (encodedParameters == null) {
@@ -3683,7 +3684,7 @@ var htmx = (function() {
     if (encodedParameters != null) {
       return encodedParameters
     } else {
-      if (usesFormData(elt)) {
+      if (useFormData || usesFormData(elt)) {
         // Force conversion to an actual FormData object in case filteredParameters is a formDataProxy
         // See https://github.com/bigskysoftware/htmx/issues/2317
         return overrideFormData(new FormData(), formDataFromObject(filteredParameters))
@@ -3903,7 +3904,8 @@ var htmx = (function() {
             targetOverride: resolveTarget(context.target),
             swapOverride: context.swap,
             select: context.select,
-            returnPromise: true
+            returnPromise: true,
+            useFormData: context.useFormData
           })
       }
     } else {
@@ -4252,7 +4254,7 @@ var htmx = (function() {
 
     let headers = getHeaders(elt, target, promptResponse)
 
-    if (verb !== 'get' && !usesFormData(elt)) {
+    if (verb !== 'get' && !usesFormData(elt) && !etc.useFormData) {
       headers['Content-Type'] = 'application/x-www-form-urlencoded'
     }
 
@@ -4462,7 +4464,7 @@ var htmx = (function() {
       })
     })
     triggerEvent(elt, 'htmx:beforeSend', responseInfo)
-    const params = useUrlParams ? null : encodeParamsForBody(xhr, elt, filteredFormData)
+    const params = useUrlParams ? null : encodeParamsForBody(xhr, elt, filteredFormData,etc.useFormData)
     xhr.send(params)
     return promise
   }
@@ -5095,6 +5097,7 @@ var htmx = (function() {
  * @property {Object|FormData} [values]
  * @property {Record<string,string>} [headers]
  * @property {string} [select]
+ * @property {boolean} [useFormData]
  */
 
 /**
@@ -5140,6 +5143,7 @@ var htmx = (function() {
  * @property {Object|FormData} [values]
  * @property {boolean} [credentials]
  * @property {number} [timeout]
+ * @property {boolean} [useFormData]
  */
 
 /**
