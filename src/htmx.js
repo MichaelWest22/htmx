@@ -1172,7 +1172,7 @@ var htmx = (function() {
       } else if (selector.indexOf('global ') === 0) {
         parts.unshift(selector.slice(7))
         result.push(...querySelectorAllExt(elt, parts.join(','), true))
-        parts.length = 0
+        break
       } else {
         unprocessedParts.push(selector)
       }
