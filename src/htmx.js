@@ -1136,36 +1136,70 @@ var htmx = (function() {
   /**
    * @param {Node|Element|Document|string} elt
    * @param {string} selector
-   * @param {boolean=} global
    * @returns {(Node|Window)[]}
    */
-  function querySelectorAllExt(elt, selector, global) {
+  function querySelectorAllExt(elt, selector) {
     elt = resolveTarget(elt)
-    if (selector.indexOf('closest ') === 0) {
-      return [closest(asElement(elt), normalizeSelector(selector.substr(8)))]
-    } else if (selector.indexOf('find ') === 0) {
-      return [find(asParentNode(elt), normalizeSelector(selector.substr(5)))]
-    } else if (selector === 'next') {
-      return [asElement(elt).nextElementSibling]
-    } else if (selector.indexOf('next ') === 0) {
-      return [scanForwardQuery(elt, normalizeSelector(selector.substr(5)), !!global)]
-    } else if (selector === 'previous') {
-      return [asElement(elt).previousElementSibling]
-    } else if (selector.indexOf('previous ') === 0) {
-      return [scanBackwardsQuery(elt, normalizeSelector(selector.substr(9)), !!global)]
-    } else if (selector === 'document') {
-      return [document]
-    } else if (selector === 'window') {
-      return [window]
-    } else if (selector === 'body') {
-      return [document.body]
-    } else if (selector === 'root') {
-      return [getRootNode(elt, !!global)]
-    } else if (selector.indexOf('global ') === 0) {
-      return querySelectorAllExt(elt, selector.slice(7), true)
-    } else {
-      return toArray(asParentNode(getRootNode(elt, !!global)).querySelectorAll(normalizeSelector(selector)))
+
+    const parts = selector.split(',')
+    const result = []
+    const unprocessedParts = []
+    // Previous implementation of global would apply it to all selectors if put at the first position.
+    // With the multiple selectors support, had to maintain backwards compatibility, hence the outer global variable
+    let global = false
+    for (let i = 0; i < parts.length; i++) {
+      let selector = normalizeSelector(parts[i])
+
+      if (selector.indexOf('global ') === 0) {
+        // Previous implementation didn't support `global` at another position than the start
+        // One would expect that `input, global button` would not apply `global` to `input` though
+        if (!global && unprocessedParts.length > 0) {
+          const standardSelector = unprocessedParts.join(',')
+          const rootNode = asParentNode(getRootNode(elt, false))
+          result.push(...toArray(rootNode.querySelectorAll(standardSelector)))
+          unprocessedParts.length = 0
+        }
+        global = true
+        selector = selector.substring(7)
+      }
+
+      let item
+      if (selector.indexOf('closest ') === 0) {
+        item = closest(asElement(elt), normalizeSelector(selector.substr(8)))
+      } else if (selector.indexOf('find ') === 0) {
+        item = find(asParentNode(elt), normalizeSelector(selector.substr(5)))
+      } else if (selector === 'next' || selector === 'nextElementSibling') {
+        item = asElement(elt).nextElementSibling
+      } else if (selector.indexOf('next ') === 0) {
+        item = scanForwardQuery(elt, normalizeSelector(selector.substr(5)), global)
+      } else if (selector === 'previous' || selector === 'previousElementSibling') {
+        item = asElement(elt).previousElementSibling
+      } else if (selector.indexOf('previous ') === 0) {
+        item = scanBackwardsQuery(elt, normalizeSelector(selector.substr(9)), global)
+      } else if (selector === 'document') {
+        item = document
+      } else if (selector === 'window') {
+        item = window
+      } else if (selector === 'body') {
+        item = document.body
+      } else if (selector === 'root') {
+        item = getRootNode(elt, global)
+      } else {
+        unprocessedParts.push(selector)
+      }
+
+      if (item) {
+        result.push(item)
+      }
     }
+
+    if (unprocessedParts.length > 0) {
+      const standardSelector = unprocessedParts.join(',')
+      const rootNode = asParentNode(getRootNode(elt, global))
+      result.push(...toArray(rootNode.querySelectorAll(standardSelector)))
+    }
+
+    return result
   }
 
   /**
