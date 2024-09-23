@@ -1136,32 +1136,17 @@ var htmx = (function() {
   /**
    * @param {Node|Element|Document|string} elt
    * @param {string} selector
+   * @param {boolean=} global
    * @returns {(Node|Window)[]}
    */
-  function querySelectorAllExt(elt, selector) {
+  function querySelectorAllExt(elt, selector, global) {
     elt = resolveTarget(elt)
 
     const parts = selector.split(',')
     const result = []
     const unprocessedParts = []
-    // Previous implementation of global would apply it to all selectors if put at the first position.
-    // With the multiple selectors support, had to maintain backwards compatibility, hence the outer global variable
-    let global = false
-    for (let i = 0; i < parts.length; i++) {
-      let selector = normalizeSelector(parts[i])
-
-      if (selector.indexOf('global ') === 0) {
-        // Previous implementation didn't support `global` at another position than the start
-        // One would expect that `input, global button` would not apply `global` to `input` though
-        if (!global && unprocessedParts.length > 0) {
-          const standardSelector = unprocessedParts.join(',')
-          const rootNode = asParentNode(getRootNode(elt, false))
-          result.push(...toArray(rootNode.querySelectorAll(standardSelector)))
-          unprocessedParts.length = 0
-        }
-        global = true
-        selector = selector.substring(7)
-      }
+    while (parts.length > 0) {
+      const selector = normalizeSelector(parts.shift())
 
       let item
       if (selector.indexOf('closest ') === 0) {
@@ -1171,11 +1156,11 @@ var htmx = (function() {
       } else if (selector === 'next' || selector === 'nextElementSibling') {
         item = asElement(elt).nextElementSibling
       } else if (selector.indexOf('next ') === 0) {
-        item = scanForwardQuery(elt, normalizeSelector(selector.substr(5)), global)
+        item = scanForwardQuery(elt, normalizeSelector(selector.substr(5)), !!global)
       } else if (selector === 'previous' || selector === 'previousElementSibling') {
         item = asElement(elt).previousElementSibling
       } else if (selector.indexOf('previous ') === 0) {
-        item = scanBackwardsQuery(elt, normalizeSelector(selector.substr(9)), global)
+        item = scanBackwardsQuery(elt, normalizeSelector(selector.substr(9)), !!global)
       } else if (selector === 'document') {
         item = document
       } else if (selector === 'window') {
@@ -1183,7 +1168,11 @@ var htmx = (function() {
       } else if (selector === 'body') {
         item = document.body
       } else if (selector === 'root') {
-        item = getRootNode(elt, global)
+        item = getRootNode(elt, !!global)
+      } else if (selector.indexOf('global ') === 0) {
+        parts.unshift(selector.slice(7))
+        result.push(...querySelectorAllExt(elt, parts.join(','), true))
+        parts.length = 0
       } else {
         unprocessedParts.push(selector)
       }
@@ -1195,7 +1184,7 @@ var htmx = (function() {
 
     if (unprocessedParts.length > 0) {
       const standardSelector = unprocessedParts.join(',')
-      const rootNode = asParentNode(getRootNode(elt, global))
+      const rootNode = asParentNode(getRootNode(elt, !!global))
       result.push(...toArray(rootNode.querySelectorAll(standardSelector)))
     }
 
