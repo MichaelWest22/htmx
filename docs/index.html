@@ -12,12 +12,24 @@
 <body>
 <table style="width:100%">
   <tr>
-    <td><button hx-get="data:,%3Cdiv%20hx-swap-oob%3D%22innerHTML%3A%23topleft%22%3E%3Cdiv%20id%3D%22video%22%20hx-preserve%3D%22true%22%3E%3C%2Fdiv%3E%3C%2Fdiv%3E"
-            hx-swap="none">
-        top left
-    </button><div id="topleft">top left</div></td>
-    <td>b</td>
-
+    <td><button hx-get="data:,%3Cdiv%20hx-swap-oob%3D%22innerHTML%3A%23topleft%22%3E%3Cdiv%20id%3D%22video%22%20hx-preserve%3E%3C%2Fdiv%3E%3C%2Fdiv%3E"
+        hx-swap="none">top left</button>
+    <div id="topleft">top left</div></td>
+    <td><button hx-get="data:,%3Cdiv%20hx-swap-oob%3D%22innerHTML%3A%23topright%22%3E%3Cdiv%20id%3D%22video%22%20hx-preserve%3E%3C%2Fdiv%3E%3C%2Fdiv%3E"
+        hx-swap="none">top right</button>
+    <div id="topleft">top right</div></td>
+  </tr>
+  <tr>
+    <td><button hx-get="data:,%3Cdiv%20hx-swap-oob%3D%22innerHTML%3A%23bottomleft%22%3E%3Cdiv%20id%3D%22video%22%20hx-preserve%3E%3C%2Fdiv%3E%3C%2Fdiv%3E"
+        hx-swap="none">bottom left</button>
+    <div id="bottomleft">bottom left</div></td>
+    <td><button hx-get="data:,%3Cdiv%20hx-swap-oob%3D%22innerHTML%3A%23bottomright%22%3E%3Cdiv%20id%3D%22video%22%20hx-preserve%3E%3C%2Fdiv%3E%3C%2Fdiv%3E"
+        hx-swap="none">bottom right</button>
+    <div id="bottomleft"><div id="video"><iframe id="rick-roll" width="600" height="300" hx-preserve="true"
+        src="https://www.youtube.com/embed/eBGIQ7ZuuiU" title="Rick Roll" frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+        referrerpolicy="strict-origin-when-cross-origin" allowfullscreen>
+    </iframe></div></div></td>
   </tr>
   <tr>
     <td>c</td>
