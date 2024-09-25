@@ -1487,7 +1487,6 @@ var htmx = (function() {
     forEach(findAll(fragment, '[hx-preserve], [data-hx-preserve]'), function(preservedElt) {
       const id = getAttributeValue(preservedElt, 'id')
       const value = getAttributeValue(preservedElt, 'hx-preserve')
-      const existingElement = getDocument().getElementById(id)
       if (existingElement != null) {
         if (preservedElt.moveBefore) { // if the moveBefore API exists, use it
           // get or create a storage spot for stuff
@@ -1497,15 +1496,9 @@ var htmx = (function() {
             pantry = find('#--htmx-preserve-pantry--')
           }
           // @ts-ignore - use proposed moveBefore feature
-          if (value != 'relocate') {
-             existingElement.insertAdjacentHTML('beforebegin', `<div id="${id}"></div>`)
-          }
           pantry.moveBefore(existingElement, null)
         } else {
           preservedElt.parentNode.replaceChild(existingElement, preservedElt)
-          if (value == 'relocate') {
-            existingElement.remove()
-          }
         }
       }
     })
