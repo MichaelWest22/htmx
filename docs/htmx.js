@@ -1486,7 +1486,7 @@ var htmx = (function() {
   function handlePreservedElements(fragment) {
     forEach(findAll(fragment, '[hx-preserve], [data-hx-preserve]'), function(preservedElt) {
       const id = getAttributeValue(preservedElt, 'id')
-      const value = getAttributeValue(preservedElt, 'hx-preserve')
+      const existingElement = getDocument().getElementById(id)
       if (existingElement != null) {
         if (preservedElt.moveBefore) { // if the moveBefore API exists, use it
           // get or create a storage spot for stuff
