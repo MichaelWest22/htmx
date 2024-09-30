@@ -92,7 +92,7 @@ describe('hx-disabled-elt attribute', function() {
     div.innerHTML.should.equal('Loaded!')
     btn.hasAttribute('disabled').should.equal(false)
   })
-  
+
   it('hx-disabled-elt supports multiple extended selectors', function() {
     this.server.respondWith('GET', '/test', 'Clicked!')
     var form = make('<form hx-get="/test" hx-disabled-elt="find input[type=\'text\'], find button" hx-swap="none"><input id="i1" type="text" placeholder="Type here..."><button id="b2" type="submit">Send</button></form>')

@@ -1127,7 +1127,7 @@ var htmx = (function() {
   function normalizeSelector(selector) {
     const trimmedSelector = selector.trim()
     if (startsWith(trimmedSelector, '<') && endsWith(trimmedSelector, '/>')) {
-      return trimmedSelector.substring(1, trimmedSelector.length - 2)
+      return trimmedSelector.substring(1, trimmedSelector.length - 2).replace('%2C', ',')
     } else {
       return trimmedSelector
     }
@@ -1141,8 +1141,15 @@ var htmx = (function() {
    */
   function querySelectorAllExt(elt, selector, global) {
     elt = resolveTarget(elt)
+    if (selector.indexOf('global ') === 0) {
+      return querySelectorAllExt(elt, selector.slice(7), true)
+    }
 
-    const parts = selector.split(',')
+    let selectors = selector
+    forEach(selectors.match(/<.*?\/>/g), function(enclosed) {
+      selectors = selectors.replace(enclosed, enclosed.replaceAll(',', '%2C'))
+    })
+    const parts = selectors.split(',')
     const result = []
     const unprocessedParts = []
     while (parts.length > 0) {
@@ -1168,12 +1175,6 @@ var htmx = (function() {
         item = document.body
       } else if (selector === 'root') {
         item = getRootNode(elt, !!global)
-      } else if (selector.indexOf('global ') === 0) {
-        // Previous implementation of `global` only supported it at the first position and applied it to the entire selector string.
-        // For backward compatibility and to maintain logical consistency, we make it apply to everything that follows.
-        parts.unshift(selector.slice(7))
-        result.push(...querySelectorAllExt(elt, parts.join(','), true))
-        break
       } else {
         unprocessedParts.push(selector)
       }
