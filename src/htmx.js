@@ -627,7 +627,9 @@ var htmx = (function() {
       if (!el.content) {
         const template = el.ownerDocument.createElement('template')
         el.parentNode.insertBefore(template, el)
-        cloneAttributes(template,el)
+        forEach(el.attributes, function(attr) {
+          template.setAttribute(attr.name, attr.value)
+        })
         el.parentNode.removeChild(el)
         while ((child = el.firstChild)) {
           template.content.appendChild(child)
