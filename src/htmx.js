@@ -484,10 +484,7 @@ var htmx = (function() {
    * @returns {boolean}
    */
   function matches(elt, selector) {
-    // @ts-ignore: non-standard properties for browser compatibility
-    // noinspection JSUnresolvedVariable
-    const matchesFunction = elt instanceof Element && (elt.matches || elt.matchesSelector || elt.msMatchesSelector || elt.mozMatchesSelector || elt.webkitMatchesSelector || elt.oMatchesSelector)
-    return !!matchesFunction && matchesFunction.call(elt, selector)
+    return elt instanceof Element && elt.matches(selector)
   }
 
   /**
