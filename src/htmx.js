@@ -2774,14 +2774,6 @@ var htmx = (function() {
   }
 
   /**
-   * @param {EventTarget} target
-   * @returns {HTMLInputElement|HTMLButtonElement|null}
-   */
-  function getTargetButton(target) {
-    return /** @type {HTMLButtonElement|HTMLInputElement|null} */ (closest(asElement(target), BUTTON_OR_SUBMIT_INPUT))
-  }
-
-  /**
    * Handle submit buttons/inputs that have the form attribute set
    * see https://developer.mozilla.org/docs/Web/HTML/Element/button
    * @param {Event} evt
@@ -2802,6 +2794,14 @@ var htmx = (function() {
     if (internalData) {
       internalData.lastButtonClicked = null
     }
+  }
+
+  /**
+   * @param {EventTarget} target
+   * @returns {HTMLInputElement|HTMLButtonElement|null}
+   */
+  function getTargetButton(target) {
+    return /** @type {HTMLButtonElement|HTMLInputElement|null} */ (closest(asElement(target), BUTTON_OR_SUBMIT_INPUT))
   }
 
   /**
