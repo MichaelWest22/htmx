@@ -2183,6 +2183,7 @@ var htmx = (function() {
   }
 
   const INPUT_SELECTOR = 'input, textarea, select'
+  const BUTTON_OR_SUBMIT_INPUT = 'input[type="submit"], button'
 
   /**
    * @param {Element} elt
@@ -2400,8 +2401,8 @@ var htmx = (function() {
       if (elt.tagName === 'FORM') {
         return true
       }
-      if (matches(elt, 'input[type="submit"], button') &&
-        (matches(elt, '[form]') || closest(elt, 'form') !== null)) {
+      if (matches(elt, BUTTON_OR_SUBMIT_INPUT) &&
+        (getRelatedForm(elt) !== null)) {
         return true
       }
       if (elt instanceof HTMLAnchorElement && elt.href &&
@@ -2773,12 +2774,20 @@ var htmx = (function() {
   }
 
   /**
+   * @param {EventTarget} target
+   * @returns {HTMLInputElement|HTMLButtonElement|null}
+   */
+  function getTargetButton(target) {
+    return /** @type {HTMLButtonElement|HTMLInputElement|null} */ (closest(asElement(target), BUTTON_OR_SUBMIT_INPUT))
+  }
+
+  /**
    * Handle submit buttons/inputs that have the form attribute set
    * see https://developer.mozilla.org/docs/Web/HTML/Element/button
    * @param {Event} evt
    */
   function maybeSetLastButtonClicked(evt) {
-    const elt = /** @type {HTMLButtonElement|HTMLInputElement} */ (closest(asElement(evt.target), "button, input[type='submit']"))
+    const elt = getTargetButton(evt.target)
     const internalData = getRelatedFormData(evt)
     if (internalData) {
       internalData.lastButtonClicked = elt
@@ -2796,15 +2805,24 @@ var htmx = (function() {
   }
 
   /**
+   * @param {Element} elt
+   * @returns {Element|null}
+   */
+  function getRelatedForm(elt) {
+    // submit buttons/inputs that have the form attribute set have form property else find closest form
+    return /** @type HTMLInputElement|HTMLButtonElement */ (elt).form || closest(elt, 'form')
+  }
+
+  /**
    * @param {Event} evt
    * @returns {HtmxNodeInternalData|undefined}
    */
   function getRelatedFormData(evt) {
-    const elt = closest(asElement(evt.target), "button, input[type='submit']")
+    const elt = getTargetButton(evt.target)
     if (!elt) {
       return
     }
-    const form = resolveTarget('#' + getRawAttribute(elt, 'form'), elt.getRootNode()) || closest(elt, 'form')
+    const form = getRelatedForm(elt)
     if (!form) {
       return
     }
@@ -3523,7 +3541,7 @@ var htmx = (function() {
 
     // for a non-GET include the closest form
     if (verb !== 'get') {
-      processInputValue(processed, priorityFormData, errors, closest(elt, 'form'), validate)
+      processInputValue(processed, priorityFormData, errors, getRelatedForm(elt), validate)
     }
 
     // include the element itself
