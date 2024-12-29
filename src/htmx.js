@@ -2183,7 +2183,6 @@ var htmx = (function() {
   }
 
   const INPUT_SELECTOR = 'input, textarea, select'
-  const BUTTON_OR_SUBMIT_INPUT = 'input[type="submit"], button'
 
   /**
    * @param {Element} elt
@@ -2795,6 +2794,8 @@ var htmx = (function() {
       internalData.lastButtonClicked = null
     }
   }
+
+  const BUTTON_OR_SUBMIT_INPUT = 'input[type="submit"], button'
 
   /**
    * @param {EventTarget} target
