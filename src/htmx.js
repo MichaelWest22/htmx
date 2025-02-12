@@ -1383,13 +1383,7 @@ var htmx = (function() {
    * @returns {boolean}
    */
   function shouldSettleAttribute(name) {
-    const attributesToSettle = htmx.config.attributesToSettle
-    for (let i = 0; i < attributesToSettle.length; i++) {
-      if (name === attributesToSettle[i]) {
-        return true
-      }
-    }
-    return false
+    return htmx.config.attributesToSettle.includes(name)
   }
 
   /**
@@ -2859,49 +2853,49 @@ var htmx = (function() {
   }
 
   /**
-   * @param {Element|HTMLInputElement} elt
+   * @param {Element} elt
    */
   function initNode(elt) {
     if (eltIsDisabled(elt)) {
       cleanUpElement(elt)
       return
     }
-    if (!elt.attributes) {
-      return // shadow DOM root does not support attributes so do not init
-    }
-    const nodeData = getInternalData(elt)
-    const attrHash = attributeHash(elt)
-    if (nodeData.initHash !== attrHash) {
-      // clean up any previously processed info
-      deInitNode(elt)
+    // Ensure only valid Elements and not shadow DOM roots are inited
+    if (elt instanceof Element) {
+      const nodeData = getInternalData(elt)
+      const attrHash = attributeHash(elt)
+      if (nodeData.initHash !== attrHash) {
+        // clean up any previously processed info
+        deInitNode(elt)
 
-      nodeData.initHash = attrHash
+        nodeData.initHash = attrHash
 
-      triggerEvent(elt, 'htmx:beforeProcessNode')
+        triggerEvent(elt, 'htmx:beforeProcessNode')
 
-      const triggerSpecs = getTriggerSpecs(elt)
-      const hasExplicitHttpAction = processVerbs(elt, nodeData, triggerSpecs)
+        const triggerSpecs = getTriggerSpecs(elt)
+        const hasExplicitHttpAction = processVerbs(elt, nodeData, triggerSpecs)
 
-      if (!hasExplicitHttpAction) {
-        if (getClosestAttributeValue(elt, 'hx-boost') === 'true') {
-          boostElement(elt, nodeData, triggerSpecs)
-        } else if (hasAttribute(elt, 'hx-trigger')) {
-          triggerSpecs.forEach(function(triggerSpec) {
-            // For "naked" triggers, don't do anything at all
-            addTriggerHandler(elt, triggerSpec, nodeData, function() {
+        if (!hasExplicitHttpAction) {
+          if (getClosestAttributeValue(elt, 'hx-boost') === 'true') {
+            boostElement(elt, nodeData, triggerSpecs)
+          } else if (hasAttribute(elt, 'hx-trigger')) {
+            triggerSpecs.forEach(function(triggerSpec) {
+              // For "naked" triggers, don't do anything at all
+              addTriggerHandler(elt, triggerSpec, nodeData, function() {
+              })
             })
-          })
+          }
         }
-      }
 
-      // Handle submit buttons/inputs that have the form attribute set
-      // see https://developer.mozilla.org/docs/Web/HTML/Element/button
-      if (elt.tagName === 'FORM' || (getRawAttribute(elt, 'type') === 'submit' && hasAttribute(elt, 'form'))) {
-        initButtonTracking(elt)
-      }
+        // Handle submit buttons/inputs that have the form attribute set
+        // see https://developer.mozilla.org/docs/Web/HTML/Element/button
+        if (elt.tagName === 'FORM' || (getRawAttribute(elt, 'type') === 'submit' && hasAttribute(elt, 'form'))) {
+          initButtonTracking(elt)
+        }
 
-      nodeData.firstInitCompleted = true
-      triggerEvent(elt, 'htmx:afterProcessNode')
+        nodeData.firstInitCompleted = true
+        triggerEvent(elt, 'htmx:afterProcessNode')
+      }
     }
   }
 
