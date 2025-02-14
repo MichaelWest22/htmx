@@ -3998,12 +3998,15 @@ var htmx = (function() {
    * @return {boolean}
    */
   function verifyPath(elt, path, requestConfig) {
-    let sameHost
-    let url
+    let sameHost = false
+    /** @type string|URL */
+    let url = path
     if (typeof URL === 'function') {
-      url = new URL(path, document.location.href)
-      const origin = document.location.origin
-      sameHost = origin === url.origin
+      const origin = window.origin !== 'null' ? window.origin : window.location.origin
+      if (origin !== 'null') {
+        url = new URL(path, origin)
+        sameHost = origin === url.origin
+      }
     } else {
     // IE11 doesn't support URL
       url = path
