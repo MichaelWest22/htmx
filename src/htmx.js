@@ -4019,8 +4019,8 @@ var htmx = (function() {
     let sameHost
     let url
     if (typeof URL === 'function') {
-      url = new URL(path, document.location.href)
-      const origin = document.location.origin
+      url = new URL(path, document.location.protocol !== 'about:' ? document.location.href : window.origin)
+      const origin = document.location.protocol !== 'about:' ? document.location.origin : window.origin
       sameHost = origin === url.origin
     } else {
     // IE11 doesn't support URL
