@@ -3562,6 +3562,7 @@ var htmx = (function() {
 
     // values from a <form> take precedence, overriding the regular values
     overrideFormData(formData, priorityFormData)
+
     return { errors, formData, values: formDataProxy(formData) }
   }
 
