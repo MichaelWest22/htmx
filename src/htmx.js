@@ -3507,58 +3507,60 @@ var htmx = (function() {
   /**
  * @param {Element|HTMLFormElement} elt
  * @param {HttpVerb} verb
+ * @param {boolean=} historyRequest
  * @returns {{errors: HtmxElementValidationError[], formData: FormData, values: Object}}
  */
-  function getInputValues(elt, verb) {
+  function getInputValues(elt, verb, historyRequest) {
     /** @type Element[] */
     const processed = []
     const formData = new FormData()
     const priorityFormData = new FormData()
     /** @type HtmxElementValidationError[] */
     const errors = []
-    const internalData = getInternalData(elt)
-    if (internalData.lastButtonClicked && !bodyContains(internalData.lastButtonClicked)) {
-      internalData.lastButtonClicked = null
-    }
-
-    // only validate when form is directly submitted and novalidate or formnovalidate are not set
-    // or if the element has an explicit hx-validate="true" on it
-    let validate = (elt instanceof HTMLFormElement && elt.noValidate !== true) || getAttributeValue(elt, 'hx-validate') === 'true'
-    if (internalData.lastButtonClicked) {
-      validate = validate && internalData.lastButtonClicked.formNoValidate !== true
-    }
-
-    // for a non-GET include the related form, which may or may not be a parent element of elt
-    if (verb !== 'get') {
-      processInputValue(processed, priorityFormData, errors, getRelatedForm(elt), validate)
-    }
-
-    // include the element itself
-    processInputValue(processed, formData, errors, elt, validate)
-
-    // if a button or submit was clicked last, include its value
-    if (internalData.lastButtonClicked || elt.tagName === 'BUTTON' ||
-    (elt.tagName === 'INPUT' && getRawAttribute(elt, 'type') === 'submit')) {
-      const button = internalData.lastButtonClicked || (/** @type HTMLInputElement|HTMLButtonElement */(elt))
-      const name = getRawAttribute(button, 'name')
-      addValueToFormData(name, button.value, priorityFormData)
-    }
-
-    // include any explicit includes
-    const includes = findAttributeTargets(elt, 'hx-include')
-    forEach(includes, function(node) {
-      processInputValue(processed, formData, errors, asElement(node), validate)
-      // if a non-form is included, include any input values within it
-      if (!matches(node, 'form')) {
-        forEach(asParentNode(node).querySelectorAll(INPUT_SELECTOR), function(descendant) {
-          processInputValue(processed, formData, errors, descendant, validate)
-        })
+    if (!historyRequest) {
+      const internalData = getInternalData(elt)
+      if (internalData.lastButtonClicked && !bodyContains(internalData.lastButtonClicked)) {
+        internalData.lastButtonClicked = null
       }
-    })
 
-    // values from a <form> take precedence, overriding the regular values
-    overrideFormData(formData, priorityFormData)
+      // only validate when form is directly submitted and novalidate or formnovalidate are not set
+      // or if the element has an explicit hx-validate="true" on it
+      let validate = (elt instanceof HTMLFormElement && elt.noValidate !== true) || getAttributeValue(elt, 'hx-validate') === 'true'
+      if (internalData.lastButtonClicked) {
+        validate = validate && internalData.lastButtonClicked.formNoValidate !== true
+      }
 
+      // for a non-GET include the related form, which may or may not be a parent element of elt
+      if (verb !== 'get') {
+        processInputValue(processed, priorityFormData, errors, getRelatedForm(elt), validate)
+      }
+
+      // include the element itself
+      processInputValue(processed, formData, errors, elt, validate)
+
+      // if a button or submit was clicked last, include its value
+      if (internalData.lastButtonClicked || elt.tagName === 'BUTTON' ||
+      (elt.tagName === 'INPUT' && getRawAttribute(elt, 'type') === 'submit')) {
+        const button = internalData.lastButtonClicked || (/** @type HTMLInputElement|HTMLButtonElement */(elt))
+        const name = getRawAttribute(button, 'name')
+        addValueToFormData(name, button.value, priorityFormData)
+      }
+
+      // include any explicit includes
+      const includes = findAttributeTargets(elt, 'hx-include')
+      forEach(includes, function(node) {
+        processInputValue(processed, formData, errors, asElement(node), validate)
+        // if a non-form is included, include any input values within it
+        if (!matches(node, 'form')) {
+          forEach(asParentNode(node).querySelectorAll(INPUT_SELECTOR), function(descendant) {
+            processInputValue(processed, formData, errors, descendant, validate)
+          })
+        }
+      })
+
+      // values from a <form> take precedence, overriding the regular values
+      overrideFormData(formData, priorityFormData)
+    }
     return { errors, formData, values: formDataProxy(formData) }
   }
 
@@ -4013,8 +4015,8 @@ var htmx = (function() {
     let sameHost
     let url
     if (typeof URL === 'function') {
-      url = new URL(path, document.location.protocol !== 'about:' ? document.location.href : window.origin)
-      const origin = document.location.protocol !== 'about:' ? document.location.origin : window.origin
+      url = new URL(path, document.location.href)
+      const origin = document.location.origin
       sameHost = origin === url.origin
     } else {
     // IE11 doesn't support URL
@@ -4346,13 +4348,13 @@ var htmx = (function() {
     if (etc.headers) {
       headers = mergeObjects(headers, etc.headers)
     }
-    const results = getInputValues(elt, verb)
+    const results = getInputValues(elt, verb, etc.historyRequest)
     let errors = results.errors
     const rawFormData = results.formData
     if (etc.values) {
       overrideFormData(rawFormData, formDataFromObject(etc.values))
     }
-    const expressionVars = formDataFromObject(getExpressionVars(elt))
+    const expressionVars = etc.historyRequest ? new FormData() : formDataFromObject(getExpressionVars(elt))
     const allFormData = overrideFormData(rawFormData, expressionVars)
     let filteredFormData = filterValues(allFormData, elt)
 
