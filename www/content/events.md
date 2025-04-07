@@ -255,10 +255,12 @@ This event is triggered when an attempt to save the cache to `localStorage` fail
 
 ### Event - `htmx:historyCacheMiss` {#htmx:historyCacheMiss}
 
-This event is triggered when a cache miss occurs when restoring history
+This event is triggered when a cache miss occurs when restoring history.  If `preventDefault()` is invoked
+on the event, the request will not be sent so you can handle it yourself.
 
 ##### Details
 
+* `detail.xhr` - the `XMLHttpRequest` that will retrieve the remote content for restoration
 * `detail.path` - the path and query of the page being restored
 
 ### Event - `htmx:historyCacheMissLoadError` {#htmx:historyCacheMissLoadError}

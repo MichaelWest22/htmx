@@ -3246,23 +3246,31 @@ var htmx = (function() {
    * @param {string} path
    */
   function loadHistoryFromServer(path) {
-    triggerEvent(getDocument().body, 'htmx:historyCacheMiss', { path })
-    const historyElement = getHistoryElement()
-    issueAjaxRequest('get', path, historyElement, null, {
-      targetOverride: historyElement,
-      historyRequest: true,
-      headers: { 'HX-History-Restore-Request': 'true' },
-      handler: function(elt, responseInfo) {
-        triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', mergeObjects({ path }, responseInfo))
-        handleAjaxResponse(elt, responseInfo)
-        if (responseInfo.successful) {
-          currentPathForHistory = path
-          triggerEvent(getDocument().body, 'htmx:historyRestore', { path, cacheMiss: true, serverResponse: responseInfo.xhr.response })
-        } else {
-          triggerErrorEvent(getDocument().body, 'htmx:historyCacheMissLoadError', mergeObjects({ path }, responseInfo))
-        }
+    const request = new XMLHttpRequest()
+    const details = { path, xhr: request }
+    request.open('GET', path, true)
+    request.setRequestHeader('HX-Request', 'true')
+    request.setRequestHeader('HX-History-Restore-Request', 'true')
+    request.setRequestHeader('HX-Current-URL', getDocument().location.href)
+    request.onload = function() {
+      if (this.status >= 200 && this.status < 400) {
+        triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', details)
+        const historyElement = getHistoryElement()
+        swap(
+          historyElement,
+          request.response,
+          { swapStyle: 'innerHTML', swapDelay: 0, settleDelay: 0 },
+          { contextElement: historyElement, historyRequest: true }
+        )
+        currentPathForHistory = path
+        triggerEvent(getDocument().body, 'htmx:historyRestore', { path, cacheMiss: true, serverResponse: this.response })
+      } else {
+        triggerErrorEvent(getDocument().body, 'htmx:historyCacheMissLoadError', details)
       }
-    })
+    }
+    if (triggerEvent(getDocument().body, 'htmx:historyCacheMiss', details)) {
+      request.send() // only send request if event not prevented
+    }
   }
 
   /**
@@ -3507,19 +3515,15 @@ var htmx = (function() {
   /**
  * @param {Element|HTMLFormElement} elt
  * @param {HttpVerb} verb
- * @param {boolean=} historyRequest
  * @returns {{errors: HtmxElementValidationError[], formData: FormData, values: Object}}
  */
-  function getInputValues(elt, verb, historyRequest) {
+  function getInputValues(elt, verb) {
     /** @type Element[] */
     const processed = []
     const formData = new FormData()
     const priorityFormData = new FormData()
     /** @type HtmxElementValidationError[] */
     const errors = []
-    if (historyRequest) {
-      return { errors, formData, values: formDataProxy(formData) }
-    }
     const internalData = getInternalData(elt)
     if (internalData.lastButtonClicked && !bodyContains(internalData.lastButtonClicked)) {
       internalData.lastButtonClicked = null
@@ -4350,13 +4354,13 @@ var htmx = (function() {
     if (etc.headers) {
       headers = mergeObjects(headers, etc.headers)
     }
-    const results = getInputValues(elt, verb, etc.historyRequest)
+    const results = getInputValues(elt, verb)
     let errors = results.errors
     const rawFormData = results.formData
     if (etc.values) {
       overrideFormData(rawFormData, formDataFromObject(etc.values))
     }
-    const expressionVars = etc.historyRequest ? new FormData() : formDataFromObject(getExpressionVars(elt))
+    const expressionVars = formDataFromObject(getExpressionVars(elt))
     const allFormData = overrideFormData(rawFormData, expressionVars)
     let filteredFormData = filterValues(allFormData, elt)
 
@@ -4857,7 +4861,6 @@ var htmx = (function() {
             eventInfo: responseInfo,
             anchor: responseInfo.pathInfo.anchor,
             contextElement: elt,
-            historyRequest: etc.historyRequest,
             afterSwapCallback: function() {
               if (hasHeader(xhr, /HX-Trigger-After-Swap:/i)) {
                 let finalElt = elt
@@ -5235,7 +5238,6 @@ var htmx = (function() {
  * @property {Object|FormData} [values]
  * @property {boolean} [credentials]
  * @property {number} [timeout]
- * @property {boolean} [historyRequest]
  */
 
 /**
