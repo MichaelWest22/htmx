@@ -857,8 +857,7 @@ It then does the swap and pushes a new location onto the history stack.
 When a user hits the back button, htmx will retrieve the old content from storage and swap it back into the target,
 simulating "going back" to the previous state.  If the location is not found in the cache, htmx will make an ajax
 request to the given URL, with the header `HX-History-Restore-Request` set to true, and expects back the HTML needed
-for the entire page. You should always set `htmx.config.historyRestoreAsHxRequest` to false to prevent the `HX-Request` header
-which can then be safely used to respond with partials. Alternatively, if the `htmx.config.refreshOnHistoryMiss` config variable
+for the entire page. Alternatively, if the `htmx.config.refreshOnHistoryMiss` config variable
 is set to true, it will issue a hard browser refresh.
 
 **NOTE:** If you push a URL into the history, you **must** be able to navigate to that URL and get a full page back!
@@ -1020,7 +1019,7 @@ htmx includes a number of useful headers in requests:
 | `HX-Current-URL` | the current URL of the browser
 | `HX-History-Restore-Request` | "true" if the request is for history restoration after a miss in the local history cache
 | `HX-Prompt` | the user response to an [hx-prompt](@/attributes/hx-prompt.md)
-| `HX-Request` | always "true" except on history restore requests if `htmx.config.historyRestoreAsHxRequest' disabled
+| `HX-Request` | always "true" except on history restore requests if `htmx.config.historyRestoreAsHxRequest' left disabled
 | `HX-Target` | the `id` of the target element if it exists
 | `HX-Trigger-Name` | the `name` of the triggered element if it exists
 | `HX-Trigger` | the `id` of the triggered element if it exists
@@ -1528,7 +1527,7 @@ response HTTP header. For example, if your server renders the full HTML when the
 `HX-Request` header is missing or `false`, and it renders a fragment of that HTML
 when `HX-Request: true`, you need to add `Vary: HX-Request`. That causes the cache to be
 keyed based on a composite of the response URL and the `HX-Request` request header —
-rather than being based just on the response URL. Always disable `htmx.config.historyRestoreAsHxRequest`
+rather than being based just on the response URL. Always leave `htmx.config.historyRestoreAsHxRequest` disabled
 so that these history full HTML requests are not cached with partial fragment responses.
 
 If you are unable (or unwilling) to use the `Vary` header, you can alternatively set the configuration parameter
@@ -1700,7 +1699,7 @@ listed below:
 | `htmx.config.triggerSpecsCache`        | defaults to `null`, the cache to store evaluated trigger specifications into, improving parsing performance at the cost of more memory usage. You may define a simple object to use a never-clearing cache, or implement your own system using a [proxy object](https://developer.mozilla.org/docs/Web/JavaScript/Reference/Global_Objects/Proxy) |
 | `htmx.config.responseHandling`         | the default [Response Handling](@/docs.md#response-handling) behavior for response status codes can be configured here to either swap or error                                                                                                                                                                                                    |
 | `htmx.config.allowNestedOobSwaps`      | defaults to `true`, whether to process OOB swaps on elements that are nested within the main response element. See [Nested OOB Swaps](@/attributes/hx-swap-oob.md#nested-oob-swaps).                                                                                                                                                              |
-| `htmx.config.historyRestoreAsHxRequest`| defaults to `true`, Whether to treat history cache miss full page relaod requests as a "HX-Request" by returning this response header. This should always be disabled when using HX-Request header to optionally return partial responses                                                                                                         |
+| `htmx.config.historyRestoreAsHxRequest`| defaults to `false`, Whether to treat history cache miss full page relaod requests as a "HX-Request" by returning this response header. This should be left disabled when using `HX-Request` header to optionally return partial responses                                                                                                        |
 </div>
 
 You can set them directly in javascript, or you can use a `meta` tag:

@@ -274,11 +274,11 @@ var htmx = (function() {
       allowNestedOobSwaps: true,
       /**
        * Whether to treat history cache miss full page relaod requests as a "HX-Request" by returning this response header
-       * This should always be disabled when using HX-Request header to optionally return partial responses
+       * This should always be left disabled when using HX-Request header to optionally return partial responses
        * @type boolean
-       * @default true
+       * @default false
        */
-      historyRestoreAsHxRequest: true
+      historyRestoreAsHxRequest: false
     },
     /** @type {typeof parseInterval} */
     parseInterval: null,

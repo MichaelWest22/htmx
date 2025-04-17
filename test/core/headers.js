@@ -365,23 +365,23 @@ describe('Core htmx AJAX headers', function() {
   })
 
   it('request to restore history should include the HX-Request header when historyRestoreAsHxRequest true', function() {
+    htmx.config.historyRestoreAsHxRequest = true
     this.server.respondWith('GET', '/test', function(xhr) {
       xhr.requestHeaders['HX-Request'].should.be.equal('true')
       xhr.respond(200, {}, '')
     })
     htmx._('loadHistoryFromServer')('/test')
     this.server.respond()
+    htmx.config.historyRestoreAsHxRequest = false
   })
 
   it('request to restore history should not include the HX-Request header when historyRestoreAsHxRequest false', function() {
-    htmx.config.historyRestoreAsHxRequest = false
     this.server.respondWith('GET', '/test', function(xhr) {
       should.equal(xhr.requestHeaders['HX-Request'], undefined)
       xhr.respond(200, {}, '')
     })
     htmx._('loadHistoryFromServer')('/test')
     this.server.respond()
-    htmx.config.historyRestoreAsHxRequest = true
   })
 
   it('request to restore history should include the HX-History-Restore-Request header', function() {
