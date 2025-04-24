@@ -408,15 +408,21 @@ describe('Core htmx API test', function() {
     div.innerHTML.should.equal('delete')
   })
 
-  it('does not trigger load on re-init of an existing element', function() {
+  it('does not trigger load on re-init of an existing element', function(done) {
     this.server.respondWith('GET', '/test', 'test')
     var div = make('<div hx-get="/test" hx-trigger="load" hx-swap="beforeend"></div>')
-    this.server.respond()
-    div.innerHTML.should.equal('test')
-    div.setAttribute('hx-swap', 'afterbegin')
-    htmx.process(div)
-    this.server.respond()
-    div.innerHTML.should.equal('test')
+    let server = this.server
+    setTimeout(function() {
+      server.respond()
+      div.innerHTML.should.equal('test')
+      div.setAttribute('hx-swap', 'afterbegin')
+      htmx.process(div)
+      setTimeout(function() {
+        server.respond()
+        div.innerHTML.should.equal('test')
+        done()
+      }, 10)
+    }, 10)
   })
 
   it('onLoad is called... onLoad', function() {

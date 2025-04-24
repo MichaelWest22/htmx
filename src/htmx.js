@@ -2611,11 +2611,10 @@ var htmx = (function() {
         handler(elt)
       }
     }
-    if (delay > 0) {
-      getWindow().setTimeout(load, delay)
-    } else {
-      load()
+    if (!delay) {
+      delay = 0 // next 'tick', so node can be fully initited
     }
+    getWindow().setTimeout(load, delay)
   }
 
   /**
@@ -2663,7 +2662,9 @@ var htmx = (function() {
     if (triggerSpec.trigger === 'revealed') {
       initScrollHandler()
       addEventListener(elt, handler, nodeData, triggerSpec)
-      maybeReveal(asElement(elt))
+      getWindow().setTimeout(function() {
+        maybeReveal(asElement(elt))
+      }, 0) // next 'tick', so node can be fully initited
     } else if (triggerSpec.trigger === 'intersect') {
       const observerOptions = {}
       if (triggerSpec.root) {
