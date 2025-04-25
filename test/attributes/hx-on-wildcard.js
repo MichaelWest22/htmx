@@ -145,12 +145,22 @@ describe('hx-on:* attribute', function() {
 
   it('should fire when triggered by revealed', function(done) {
     this.server.respondWith('POST', '/test', 'test')
-    make("<div hx-trigger='revealed' hx-post='/test' hx-on:htmx:config-request='foo = true'></div>")
+    make("<div hx-trigger='revealed' hx-post='/test' hx-on:htmx:config-request='foo = true' style='position: fixed; top: 1px; left: 1px; border: 3px solid red'></div>")
     setTimeout(function() {
       window.foo.should.equal(true)
       delete window.foo
       done()
     }, 10)
+  })
+
+  it('should fire when triggered by intersect', function(done) {
+    this.server.respondWith('POST', '/test', 'test')
+    make("<div hx-trigger='intersect' hx-post='/test' hx-on:htmx:config-request='foo = true' style='position: fixed; top: 1px; left: 1px; border: 3px solid red'></div>")
+    setTimeout(function() {
+      window.foo.should.equal(true)
+      delete window.foo
+      done()
+    }, 20)
   })
 
   it('de-initializes hx-on-* content properly', function() {

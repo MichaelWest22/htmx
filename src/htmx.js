@@ -2611,10 +2611,8 @@ var htmx = (function() {
         handler(elt)
       }
     }
-    if (!delay) {
-      delay = 0 // next 'tick', so node can be fully initited
-    }
-    getWindow().setTimeout(load, delay)
+    // if no delay set then use next 'tick', so node can be fully initited
+    getWindow().setTimeout(load, delay ? delay : 0)
   }
 
   /**
@@ -2664,7 +2662,7 @@ var htmx = (function() {
       addEventListener(elt, handler, nodeData, triggerSpec)
       getWindow().setTimeout(function() {
         maybeReveal(asElement(elt))
-      }, 0) // next 'tick', so node can be fully initited
+      }, triggerSpec.delay ? triggerSpec.delay : 0) // next 'tick', so node can be fully initited
     } else if (triggerSpec.trigger === 'intersect') {
       const observerOptions = {}
       if (triggerSpec.root) {
@@ -2677,7 +2675,13 @@ var htmx = (function() {
         for (let i = 0; i < entries.length; i++) {
           const entry = entries[i]
           if (entry.isIntersecting) {
-            triggerEvent(elt, 'intersect')
+            if (triggerSpec.delay) {
+              getWindow().setTimeout(function() {
+                triggerEvent(elt, 'intersect') 
+              }, triggerSpec.delay)
+            } else {
+              triggerEvent(elt, 'intersect')
+            }
             break
           }
         }
