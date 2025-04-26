@@ -2319,9 +2319,13 @@ var htmx = (function() {
 
   /**
    * @param {Element} elt
+   * @returns {boolean}
    */
   function eltIsDisabled(elt) {
-    return closest(elt, htmx.config.disableSelector)
+    if (closest(elt, htmx.config.disableSelector) != null) {
+      cleanUpElement(elt)
+      return true
+    }
   }
 
   /**
@@ -2352,11 +2356,9 @@ var htmx = (function() {
       triggerSpecs.forEach(function(triggerSpec) {
         addEventListener(elt, function(node, evt) {
           const elt = asElement(node)
-          if (eltIsDisabled(elt)) {
-            cleanUpElement(elt)
-            return
+          if (!eltIsDisabled(elt)) {
+            issueAjaxRequest(verb, path, elt, evt)
           }
-          issueAjaxRequest(verb, path, elt, evt)
         }, nodeData, triggerSpec, true)
       })
     }
@@ -2607,11 +2609,9 @@ var htmx = (function() {
         triggerSpecs.forEach(function(triggerSpec) {
           addTriggerHandler(elt, triggerSpec, nodeData, function(node, evt) {
             const elt = asElement(node)
-            if (eltIsDisabled(elt)) {
-              cleanUpElement(elt)
-              return
+            if (!eltIsDisabled(elt)) {
+              issueAjaxRequest(verb, path, elt, evt)
             }
-            issueAjaxRequest(verb, path, elt, evt)
           })
         })
       }
@@ -2824,13 +2824,12 @@ var htmx = (function() {
     /** @type EventListener */
     const listener = function(e) {
       maybeEval(elt, function() {
-        if (eltIsDisabled(elt)) {
-          return
+        if (!eltIsDisabled(elt)) {
+          if (!func) {
+            func = new Function('event', code)
+          }
+          func.call(elt, e)
         }
-        if (!func) {
-          func = new Function('event', code)
-        }
-        func.call(elt, e)
       })
     }
     elt.addEventListener(eventName, listener)
@@ -2871,45 +2870,48 @@ var htmx = (function() {
    * @param {Element|HTMLInputElement} elt
    */
   function initNode(elt) {
-    if (eltIsDisabled(elt)) {
-      cleanUpElement(elt)
-      return
-    }
-    // Ensure only valid Elements and not shadow DOM roots are inited
-    if (!(elt instanceof Element)) return
+    triggerEvent(elt, 'htmx:beforeProcessNode')
+
     const nodeData = getInternalData(elt)
-    const attrHash = attributeHash(elt)
-    if (nodeData.initHash !== attrHash) {
-      // clean up any previously processed info
-      deInitNode(elt)
+    const triggerSpecs = getTriggerSpecs(elt)
+    const hasExplicitHttpAction = processVerbs(elt, nodeData, triggerSpecs)
 
-      nodeData.initHash = attrHash
-
-      triggerEvent(elt, 'htmx:beforeProcessNode')
-
-      const triggerSpecs = getTriggerSpecs(elt)
-      const hasExplicitHttpAction = processVerbs(elt, nodeData, triggerSpecs)
-
-      if (!hasExplicitHttpAction) {
-        if (getClosestAttributeValue(elt, 'hx-boost') === 'true') {
-          boostElement(elt, nodeData, triggerSpecs)
-        } else if (hasAttribute(elt, 'hx-trigger')) {
-          triggerSpecs.forEach(function(triggerSpec) {
-            // For "naked" triggers, don't do anything at all
-            addTriggerHandler(elt, triggerSpec, nodeData, function() {
-            })
+    if (!hasExplicitHttpAction) {
+      if (getClosestAttributeValue(elt, 'hx-boost') === 'true') {
+        boostElement(elt, nodeData, triggerSpecs)
+      } else if (hasAttribute(elt, 'hx-trigger')) {
+        triggerSpecs.forEach(function(triggerSpec) {
+          // For "naked" triggers, don't do anything at all
+          addTriggerHandler(elt, triggerSpec, nodeData, function() {
           })
-        }
+        })
       }
+    }
 
-      // Handle submit buttons/inputs that have the form attribute set
-      // see https://developer.mozilla.org/docs/Web/HTML/Element/button
-      if (elt.tagName === 'FORM' || (getRawAttribute(elt, 'type') === 'submit' && hasAttribute(elt, 'form'))) {
-        initButtonTracking(elt)
+    // Handle submit buttons/inputs that have the form attribute set
+    // see https://developer.mozilla.org/docs/Web/HTML/Element/button
+    if (elt.tagName === 'FORM' || (getRawAttribute(elt, 'type') === 'submit' && hasAttribute(elt, 'form'))) {
+      initButtonTracking(elt)
+    }
+
+    nodeData.firstInitCompleted = true
+    triggerEvent(elt, 'htmx:afterProcessNode')
+  }
+
+  /**
+   * @param {Element} elt
+   * @returns {boolean}
+   */
+  function maybeDeInitAndHash(elt) {
+    // Ensure only valid Elements and not shadow DOM roots are inited
+    if (elt instanceof Element) {
+      const nodeData = getInternalData(elt)
+      const hash = attributeHash(elt)
+      if (nodeData.initHash !== hash) {
+        deInitNode(elt)
+        nodeData.initHash = hash
+        return true
       }
-
-      nodeData.firstInitCompleted = true
-      triggerEvent(elt, 'htmx:afterProcessNode')
     }
   }
 
@@ -2922,13 +2924,21 @@ var htmx = (function() {
    */
   function processNode(elt) {
     elt = resolveTarget(elt)
-    if (eltIsDisabled(elt)) {
-      cleanUpElement(elt)
-      return
+    if (!eltIsDisabled(elt)) {
+      const initElt = maybeDeInitAndHash(elt)
+      const elementsToInit = []
+      forEach(findElementsToProcess(elt), function(child) {
+        if (!eltIsDisabled(child) && maybeDeInitAndHash(child)) {
+          elementsToInit.push(child)
+        }
+      })
+
+      forEach(findHxOnWildcardElements(elt), processHxOnWildcard)
+      if (initElt) {
+        initNode(elt)
+      }
+      forEach(elementsToInit, initNode)
     }
-    initNode(elt)
-    forEach(findElementsToProcess(elt), function(child) { initNode(child) })
-    forEach(findHxOnWildcardElements(elt), processHxOnWildcard)
   }
 
   //= ===================================================================
