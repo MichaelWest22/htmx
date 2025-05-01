@@ -318,6 +318,7 @@ var htmx = (function() {
     addTriggerHandler,
     bodyContains,
     canAccessLocalStorage,
+    duplicateScript: duplicateScript, // eslint-disable-line object-shorthand
     findThisElement,
     filterValues,
     swap,
@@ -333,9 +334,11 @@ var htmx = (function() {
     getTriggerSpecs,
     getTarget,
     makeFragment,
+    maybeEval: maybeEval, // eslint-disable-line object-shorthand
     mergeObjects,
     makeSettleInfo,
     oobSwap,
+    parseHTML: parseHTML, // eslint-disable-line object-shorthand
     querySelectorExt,
     settleImmediately,
     shouldCancel,
@@ -567,7 +570,7 @@ var htmx = (function() {
   function normalizeScriptTags(fragment) {
     Array.from(fragment.querySelectorAll('script')).forEach(/** @param {HTMLScriptElement} script */ (script) => {
       if (isJavaScriptScriptNode(script)) {
-        const newScript = duplicateScript(script)
+        const newScript = internalAPI.duplicateScript(script)
         const parent = script.parentNode
         try {
           parent.insertBefore(newScript, script)
@@ -599,18 +602,18 @@ var htmx = (function() {
     if (startTag === 'html') {
       // if it is a full document, parse it and return the body
       fragment = /** @type DocumentFragmentWithTitle */ (new DocumentFragment())
-      const doc = parseHTML(response)
+      const doc = internalAPI.parseHTML(response)
       takeChildrenFor(fragment, doc.body)
       fragment.title = doc.title
     } else if (startTag === 'body') {
       // parse body w/o wrapping in template
       fragment = /** @type DocumentFragmentWithTitle */ (new DocumentFragment())
-      const doc = parseHTML(responseWithNoHead)
+      const doc = internalAPI.parseHTML(responseWithNoHead)
       takeChildrenFor(fragment, doc.body)
       fragment.title = doc.title
     } else {
       // otherwise we have non-body partial HTML content, so wrap it in a template to maximize parsing flexibility
-      const doc = parseHTML('<body><template class="internal-htmx-wrapper">' + responseWithNoHead + '</template></body>')
+      const doc = internalAPI.parseHTML('<body><template class="internal-htmx-wrapper">' + responseWithNoHead + '</template></body>')
       fragment = /** @type DocumentFragmentWithTitle */ (doc.querySelector('template').content)
       // extract title into fragment for later processing
       fragment.title = doc.title
@@ -855,9 +858,7 @@ var htmx = (function() {
    * @returns {any}
    */
   function internalEval(str) {
-    return maybeEval(getDocument().body, function() {
-      return eval(str)
-    })
+    return internalAPI.maybeEval(getDocument().body, str, 'eval')
   }
 
   /**
@@ -2105,10 +2106,7 @@ var htmx = (function() {
             tokens.shift()
             conditionalSource += ')})'
             try {
-              const conditionFunction = maybeEval(elt, function() {
-                return Function(conditionalSource)()
-              },
-              function() { return true })
+              const conditionFunction = internalAPI.maybeEval(elt, conditionalSource, null, null, null, true)
               conditionFunction.source = conditionalSource
               return conditionFunction
             } catch (e) {
@@ -2820,18 +2818,12 @@ var htmx = (function() {
     if (!Array.isArray(nodeData.onHandlers)) {
       nodeData.onHandlers = []
     }
-    let func
     /** @type EventListener */
     const listener = function(e) {
-      maybeEval(elt, function() {
-        if (eltIsDisabled(elt)) {
-          return
-        }
-        if (!func) {
-          func = new Function('event', code)
-        }
-        func.call(elt, e)
-      })
+      if (eltIsDisabled(elt)) {
+        return
+      }
+      internalAPI.maybeEval(elt, code, 'event', e, elt)
     }
     elt.addEventListener(eventName, listener)
     nodeData.onHandlers.push({ event: eventName, listener })
@@ -3820,13 +3812,7 @@ var htmx = (function() {
       }
       let varsValues
       if (evaluateValue) {
-        varsValues = maybeEval(elt, function() {
-          if (event) {
-            return Function('event', 'return (' + str + ')')(event)
-          } else { // allow window.event to be accessible
-            return Function('return (' + str + ')')()
-          }
-        }, {})
+        varsValues = internalAPI.maybeEval(elt, 'return (' + str + ')', 'event', event, null, {})
       } else {
         varsValues = parseJSON(str)
       }
@@ -3843,13 +3829,22 @@ var htmx = (function() {
 
   /**
    * @param {EventTarget|string} elt
-   * @param {() => any} toEval
+   * @param {string} code
+   * @param {string=} paramName
+   * @param {any=} param
+   * @param {Element=} thisArg
    * @param {any=} defaultVal
    * @returns {any}
    */
-  function maybeEval(elt, toEval, defaultVal) {
+  function maybeEval(elt, code, paramName, param, thisArg, defaultVal) {
     if (htmx.config.allowEval) {
-      return toEval()
+      if (paramName == 'eval') {
+        return eval(code)
+      }
+      if (paramName && param) {
+        return Function(paramName, code).call(thisArg, param)
+      }
+      return Function(code).call(thisArg)
     } else {
       triggerErrorEvent(elt, 'htmx:evalDisallowedError')
       return defaultVal
