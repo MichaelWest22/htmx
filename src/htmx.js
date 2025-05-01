@@ -5239,3 +5239,45 @@ var htmx = (function() {
  * @property {(xhr: XMLHttpRequest, parameters: FormData, elt: Node) => *|string|null} encodeParameters
  * @property {() => string[]|null} getSelectors
  */
+
+// Test extension that replaces eval with script insertion to avoid unsafe-eval CSP
+// This is not ideal on its own as it just hides the unsafe eval so ideally this
+// would also include support for supplying per request nonce per eval instance
+// so an equivalent to nonce based inline scripts could be implemented to make
+// the eval safe and trusted.
+// This is also a demo of how we could allow function proxy via internalAPI of some
+// htmx internal functions so extensions can replace or proxy them to add new features.
+let api
+let originalEval
+
+function replaceEval(elt, code, paramName, param, thisArg, defaultVal) {
+  if (htmx.config.allowEval) {
+    if (paramName == 'eval') {
+      return originalEval(elt, code, paramName)
+    }
+    delete htmx.evalFunction
+    var script = document.createElement('script')
+    script.type = 'text/javascript'
+    if (paramName && param) {
+      script.text = 'htmx.evalFunction = function(' + paramName + ') {' + code + '}'
+    } else {
+      script.text = 'htmx.evalFunction = function() {' + code + '}'
+    }
+    document.head.appendChild(script)
+    script.remove()
+    if (htmx.evalFunction) {
+      return htmx.evalFunction.call(thisArg, param)
+    }
+    return defaultVal
+  } else {
+    api.triggerErrorEvent(elt, 'htmx:evalDisallowedError')
+    return defaultVal
+  }
+}
+htmx.defineExtension('replace-eval-example', {
+  init: function(apiRef) {
+    api = apiRef
+    originalEval = api.maybeEval
+    api.maybeEval = replaceEval
+  }
+})
