@@ -314,11 +314,12 @@ var htmx = (function() {
   htmx.parseInterval = parseInterval
   htmx._ = internalEval
 
-  const internalAPI = {
+  // internalAPI for extensions
+  const api = {
     addTriggerHandler,
     bodyContains,
     canAccessLocalStorage,
-    duplicateScript: duplicateScript, // eslint-disable-line object-shorthand
+    duplicateScript,
     findThisElement,
     filterValues,
     swap,
@@ -334,11 +335,11 @@ var htmx = (function() {
     getTriggerSpecs,
     getTarget,
     makeFragment,
-    maybeEval: maybeEval, // eslint-disable-line object-shorthand
+    maybeEval,
     mergeObjects,
     makeSettleInfo,
     oobSwap,
-    parseHTML: parseHTML, // eslint-disable-line object-shorthand
+    parseHTML,
     querySelectorExt,
     settleImmediately,
     shouldCancel,
@@ -570,7 +571,7 @@ var htmx = (function() {
   function normalizeScriptTags(fragment) {
     Array.from(fragment.querySelectorAll('script')).forEach(/** @param {HTMLScriptElement} script */ (script) => {
       if (isJavaScriptScriptNode(script)) {
-        const newScript = internalAPI.duplicateScript(script)
+        const newScript = api.duplicateScript(script)
         const parent = script.parentNode
         try {
           parent.insertBefore(newScript, script)
@@ -602,18 +603,18 @@ var htmx = (function() {
     if (startTag === 'html') {
       // if it is a full document, parse it and return the body
       fragment = /** @type DocumentFragmentWithTitle */ (new DocumentFragment())
-      const doc = internalAPI.parseHTML(response)
+      const doc = api.parseHTML(response)
       takeChildrenFor(fragment, doc.body)
       fragment.title = doc.title
     } else if (startTag === 'body') {
       // parse body w/o wrapping in template
       fragment = /** @type DocumentFragmentWithTitle */ (new DocumentFragment())
-      const doc = internalAPI.parseHTML(responseWithNoHead)
+      const doc = api.parseHTML(responseWithNoHead)
       takeChildrenFor(fragment, doc.body)
       fragment.title = doc.title
     } else {
       // otherwise we have non-body partial HTML content, so wrap it in a template to maximize parsing flexibility
-      const doc = internalAPI.parseHTML('<body><template class="internal-htmx-wrapper">' + responseWithNoHead + '</template></body>')
+      const doc = api.parseHTML('<body><template class="internal-htmx-wrapper">' + responseWithNoHead + '</template></body>')
       fragment = /** @type DocumentFragmentWithTitle */ (doc.querySelector('template').content)
       // extract title into fragment for later processing
       fragment.title = doc.title
@@ -858,7 +859,7 @@ var htmx = (function() {
    * @returns {any}
    */
   function internalEval(str) {
-    return internalAPI.maybeEval(getDocument().body, str, 'eval')
+    return api.maybeEval(getDocument().body, str, 'eval')
   }
 
   /**
@@ -2106,7 +2107,7 @@ var htmx = (function() {
             tokens.shift()
             conditionalSource += ')})'
             try {
-              const conditionFunction = internalAPI.maybeEval(elt, conditionalSource, null, null, null, true)
+              const conditionFunction = api.maybeEval(elt, conditionalSource, null, null, null, true)
               conditionFunction.source = conditionalSource
               return conditionFunction
             } catch (e) {
@@ -2823,7 +2824,7 @@ var htmx = (function() {
       if (eltIsDisabled(elt)) {
         return
       }
-      internalAPI.maybeEval(elt, code, 'event', e, elt)
+      api.maybeEval(elt, code, 'event', e, elt)
     }
     elt.addEventListener(eventName, listener)
     nodeData.onHandlers.push({ event: eventName, listener })
@@ -3812,7 +3813,7 @@ var htmx = (function() {
       }
       let varsValues
       if (evaluateValue) {
-        varsValues = internalAPI.maybeEval(elt, 'return (' + str + ')', 'event', event, null, {})
+        varsValues = api.maybeEval(elt, 'return (' + str + ')', 'event', event, null, {})
       } else {
         varsValues = parseJSON(str)
       }
@@ -4915,7 +4916,7 @@ var htmx = (function() {
    */
   function defineExtension(name, extension) {
     if (extension.init) {
-      extension.init(internalAPI)
+      extension.init(api)
     }
     extensions[name] = mergeObjects(extensionBase(), extension)
   }
@@ -5253,7 +5254,7 @@ let originalEval
 function replaceEval(elt, code, paramName, param, thisArg, defaultVal) {
   if (htmx.config.allowEval) {
     if (paramName == 'eval') {
-      return originalEval(elt, code, paramName)
+      return originalEval.apply(this, arguments)
     }
     delete htmx.evalFunction
     var script = document.createElement('script')
