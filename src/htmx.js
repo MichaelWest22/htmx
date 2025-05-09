@@ -316,36 +316,37 @@ var htmx = (function() {
 
   // internalAPI for extensions
   const api = {
-    addTriggerHandler,
     bodyContains,
     canAccessLocalStorage,
-    duplicateScript,
     findThisElement,
     filterValues,
-    swap,
     hasAttribute,
     getAttributeValue,
     getClosestAttributeValue,
     getClosestMatch,
     getExpressionVars,
-    getHeaders,
-    getInputValues,
     getInternalData,
     getSwapSpecification,
-    getTriggerSpecs,
     getTarget,
-    makeFragment,
-    maybeEval,
     mergeObjects,
     makeSettleInfo,
-    oobSwap,
-    parseHTML,
     querySelectorExt,
     settleImmediately,
     shouldCancel,
     triggerEvent,
     triggerErrorEvent,
-    withExtensions
+    withExtensions,
+    // The below api functions can be replaced or proxied by global extensions
+    addTriggerHandler,
+    duplicateScript,
+    getHeaders,
+    getInputValues,
+    getTriggerSpecs,
+    makeFragment,
+    maybeEval,
+    oobSwap,
+    parseHTML,
+    swap
   }
 
   const VERBS = ['get', 'post', 'put', 'delete', 'patch']
@@ -1885,7 +1886,7 @@ var htmx = (function() {
       target.textContent = content
     // Otherwise, make the fragment and process it
     } else {
-      let fragment = makeFragment(content)
+      let fragment = api.makeFragment(content)
 
       settleInfo.title = fragment.title
 
@@ -2604,7 +2605,7 @@ var htmx = (function() {
         nodeData.path = path
         nodeData.verb = verb
         triggerSpecs.forEach(function(triggerSpec) {
-          addTriggerHandler(elt, triggerSpec, nodeData, function(node, evt) {
+          api.addTriggerHandler(elt, triggerSpec, nodeData, function(node, evt) {
             const elt = asElement(node)
             if (eltIsDisabled(elt)) {
               cleanUpElement(elt)
@@ -2880,7 +2881,7 @@ var htmx = (function() {
 
       triggerEvent(elt, 'htmx:beforeProcessNode')
 
-      const triggerSpecs = getTriggerSpecs(elt)
+      const triggerSpecs = api.getTriggerSpecs(elt)
       const hasExplicitHttpAction = processVerbs(elt, nodeData, triggerSpecs)
 
       if (!hasExplicitHttpAction) {
@@ -2889,7 +2890,7 @@ var htmx = (function() {
         } else if (hasAttribute(elt, 'hx-trigger')) {
           triggerSpecs.forEach(function(triggerSpec) {
             // For "naked" triggers, don't do anything at all
-            addTriggerHandler(elt, triggerSpec, nodeData, function() {
+            api.addTriggerHandler(elt, triggerSpec, nodeData, function() {
             })
           })
         }
@@ -3003,6 +3004,12 @@ var htmx = (function() {
       detail = {}
     }
     detail.elt = elt
+
+    forEach(globalEventHooks, function(hook) {
+      if (hook(eventName, detail) == false) {
+        return false
+      }
+    })
     const event = makeEvent(eventName, detail)
     if (htmx.logger && !ignoreEventForLogging(eventName)) {
       htmx.logger(elt, eventName, detail)
@@ -3201,7 +3208,7 @@ var htmx = (function() {
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
         triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', details)
-        const fragment = makeFragment(this.response)
+        const fragment = api.makeFragment(this.response)
         /** @type ParentNode */
         const content = fragment.querySelector('[hx-history-elt],[data-hx-history-elt]') || fragment
         const historyElement = getHistoryElement()
@@ -3229,7 +3236,7 @@ var htmx = (function() {
     path = path || location.pathname + location.search
     const cached = getCachedHistory(path)
     if (cached) {
-      const fragment = makeFragment(cached.content)
+      const fragment = api.makeFragment(cached.content)
       const historyElement = getHistoryElement()
       const settleInfo = makeSettleInfo(historyElement)
       handleTitle(cached.title)
@@ -4302,7 +4309,7 @@ var htmx = (function() {
       }
     }
 
-    let headers = getHeaders(elt, target, promptResponse)
+    let headers = api.getHeaders(elt, target, promptResponse)
 
     if (verb !== 'get' && !usesFormData(elt)) {
       headers['Content-Type'] = 'application/x-www-form-urlencoded'
@@ -4311,13 +4318,13 @@ var htmx = (function() {
     if (etc.headers) {
       headers = mergeObjects(headers, etc.headers)
     }
-    const results = getInputValues(elt, verb)
+    const results = api.getInputValues(elt, verb)
     let errors = results.errors
     const rawFormData = results.formData
     if (etc.values) {
       overrideFormData(rawFormData, formDataFromObject(etc.values))
     }
-    const expressionVars = formDataFromObject(getExpressionVars(elt, event))
+    const expressionVars = formDataFromObject(api.getExpressionVars(elt, event))
     const allFormData = overrideFormData(rawFormData, expressionVars)
     let filteredFormData = filterValues(allFormData, elt)
 
@@ -4814,7 +4821,7 @@ var htmx = (function() {
             }
           }
 
-          swap(target, serverResponse, swapSpec, {
+          api.swap(target, serverResponse, swapSpec, {
             select: selectOverride || select,
             selectOOB,
             eventInfo: responseInfo,
@@ -4890,6 +4897,9 @@ var htmx = (function() {
   /** @type {Object<string, HtmxExtension>} */
   const extensions = {}
 
+  /** @type {function[]} */
+  const globalEventHooks = []
+
   /**
    * extensionBase defines the default functions for all extensions.
    * @returns {HtmxExtension}
@@ -4913,12 +4923,18 @@ var htmx = (function() {
    *
    * @param {string} name the extension name
    * @param {Partial<HtmxExtension>} extension the extension definition
+   * @param {function=} globalEventHook global event hook function
    */
-  function defineExtension(name, extension) {
+  function defineExtension(name, extension, globalEventHook, globalOnly) {
     if (extension.init) {
       extension.init(api)
     }
-    extensions[name] = mergeObjects(extensionBase(), extension)
+    if (globalEventHook) {
+      globalEventHooks.push(globalEventHook)
+    }
+    if (name !== 'global') {
+      extensions[name] = mergeObjects(extensionBase(), extension)
+    }
   }
 
   /**
@@ -5248,6 +5264,10 @@ var htmx = (function() {
 // the eval safe and trusted.
 // This is also a demo of how we could allow function proxy via internalAPI of some
 // htmx internal functions so extensions can replace or proxy them to add new features.
+// Also a demo of how we could have global extensions that can pass a global event hook
+// function into defineExtension and if the extension name is global it will not register
+// as a normal hx-ext attribute scopped extension.  extensions could be hybrid and use
+// the global event hook but still retain all the normal non global scopped extension behaviour
 let api
 let originalEval
 
@@ -5275,10 +5295,10 @@ function replaceEval(elt, code, paramName, param, thisArg, defaultVal) {
     return defaultVal
   }
 }
-htmx.defineExtension('replace-eval-example', {
+htmx.defineExtension('global', {
   init: function(apiRef) {
     api = apiRef
     originalEval = api.maybeEval
     api.maybeEval = replaceEval
   }
-})
+}, function(event, details) { console.log(event) })
