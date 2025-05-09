@@ -5268,6 +5268,11 @@ var htmx = (function() {
 // function into defineExtension and if the extension name is global it will not register
 // as a normal hx-ext attribute scopped extension.  extensions could be hybrid and use
 // the global event hook but still retain all the normal non global scopped extension behaviour
+// global event hook would fire on all events before the event is generated on the DOM and
+// allow overriding the details before being passed to event listeners and then normal
+// extensions and also allow preventing events triggering if required.  This hook also
+// is much simpler and faster as it does not scan the extension attribute inheritance
+// and just fires on a simple possibly empty array of function hooks.
 let api
 let originalEval
 
