@@ -3005,7 +3005,7 @@ var htmx = (function() {
     }
     detail.elt = elt
 
-    withExtensions(undefined, function(extension) {
+    forEach(globalExtensions, function(extension) {
       if (extension.preEventHook(eventName, detail) == false) {
         return false
       }
@@ -4956,9 +4956,6 @@ var htmx = (function() {
    */
   function getExtensions(elt, extensionsToReturn, extensionsToIgnore) {
     if (extensionsToReturn == undefined) {
-      if (elt == undefined) {
-        return globalExtensions
-      }
       extensionsToReturn = [...globalExtensions]
     }
     if (elt == undefined) {
