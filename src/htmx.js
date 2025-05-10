@@ -3005,8 +3005,8 @@ var htmx = (function() {
     }
     detail.elt = elt
 
-    forEach(globalEventHooks, function(hook) {
-      if (hook(eventName, detail) == false) {
+    withExtensions(undefined, function(extension) {
+      if (extension.preEventHook(eventName, detail) == false) {
         return false
       }
     })
@@ -4897,8 +4897,8 @@ var htmx = (function() {
   /** @type {Object<string, HtmxExtension>} */
   const extensions = {}
 
-  /** @type {function[]} */
-  const globalEventHooks = []
+  /** @type {HtmxExtension[]} */
+  var globalExtensions = []
 
   /**
    * extensionBase defines the default functions for all extensions.
@@ -4912,7 +4912,9 @@ var htmx = (function() {
       transformResponse: function(text, xhr, elt) { return text },
       isInlineSwap: function(swapStyle) { return false },
       handleSwap: function(swapStyle, target, fragment, settleInfo) { return false },
-      encodeParameters: function(xhr, parameters, elt) { return null }
+      encodeParameters: function(xhr, parameters, elt) { return null },
+      preEventHook: function(name, details) { return true },
+      isGlobal: false
     }
   }
 
@@ -4923,18 +4925,13 @@ var htmx = (function() {
    *
    * @param {string} name the extension name
    * @param {Partial<HtmxExtension>} extension the extension definition
-   * @param {function=} globalEventHook global event hook function
    */
-  function defineExtension(name, extension, globalEventHook, globalOnly) {
+  function defineExtension(name, extension) {
     if (extension.init) {
       extension.init(api)
     }
-    if (globalEventHook) {
-      globalEventHooks.push(globalEventHook)
-    }
-    if (name !== 'global') {
-      extensions[name] = mergeObjects(extensionBase(), extension)
-    }
+    extensions[name] = mergeObjects(extensionBase(), extension)
+    globalExtensions = Object.values(extensions).filter((ext) => ext.isGlobal)
   }
 
   /**
@@ -4946,6 +4943,7 @@ var htmx = (function() {
    */
   function removeExtension(name) {
     delete extensions[name]
+    globalExtensions = Object.values(extensions).filter((ext) => ext.isGlobal)
   }
 
   /**
@@ -4958,7 +4956,10 @@ var htmx = (function() {
    */
   function getExtensions(elt, extensionsToReturn, extensionsToIgnore) {
     if (extensionsToReturn == undefined) {
-      extensionsToReturn = []
+      if (elt == undefined) {
+        return globalExtensions
+      }
+      extensionsToReturn = [...globalExtensions]
     }
     if (elt == undefined) {
       return extensionsToReturn
@@ -5255,6 +5256,8 @@ var htmx = (function() {
  * @property {(swapStyle: HtmxSwapStyle, target: Node, fragment: Node, settleInfo: HtmxSettleInfo) => boolean|Node[]} handleSwap
  * @property {(xhr: XMLHttpRequest, parameters: FormData, elt: Node) => *|string|null} encodeParameters
  * @property {() => string[]|null} getSelectors
+ * @property {(name: string, detail: Object) => boolean} preEventHook
+ * @property {boolean} isGlobal
  */
 
 // Test extension that replaces eval with script insertion to avoid unsafe-eval CSP
@@ -5300,10 +5303,15 @@ function replaceEval(elt, code, paramName, param, thisArg, defaultVal) {
     return defaultVal
   }
 }
-htmx.defineExtension('global', {
+htmx.defineExtension('eval-ext', {
   init: function(apiRef) {
     api = apiRef
     originalEval = api.maybeEval
     api.maybeEval = replaceEval
-  }
-}, function(event, details) { console.log(event) })
+  },
+  preEventHook: function(eventName, details) {
+    console.log(eventName)
+    return true
+  },
+  isGlobal: true
+})
