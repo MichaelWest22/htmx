@@ -3681,6 +3681,15 @@ var htmx = (function() {
     if (getInternalData(elt).boosted) {
       headers['HX-Boosted'] = 'true'
     }
+    if (target !== getDocument().body) {
+      const selectOOB = getClosestAttributeValue(elt, 'hx-select-oob')
+      const select = getClosestAttributeValue(elt, 'hx-select')
+      if (select) {
+        headers['HX-Response-Type'] = 'hx-select:' + select + (selectOOB ? ',' + selectOOB : '')
+      } else {
+        headers['HX-Response-Type'] = 'partial'
+      }
+    }
     return headers
   }
 
