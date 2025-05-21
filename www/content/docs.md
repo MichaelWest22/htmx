@@ -1021,6 +1021,7 @@ htmx includes a number of useful headers in requests:
 | `HX-History-Restore-Request` | "true" if the request is for history restoration after a miss in the local history cache
 | `HX-Prompt` | the user response to an [hx-prompt](@/attributes/hx-prompt.md)
 | `HX-Request` | always "true" except on history restore requests if `htmx.config.historyRestoreAsHxRequest' disabled
+| `HX-Requset-Type` | set to "partial" for requests that expect partial fragments and not set for full page requests targeting body
 | `HX-Target` | the `id` of the target element if it exists
 | `HX-Trigger-Name` | the `name` of the triggered element if it exists
 | `HX-Trigger` | the `id` of the triggered element if it exists
@@ -1530,6 +1531,7 @@ when `HX-Request: true`, you need to add `Vary: HX-Request`. That causes the cac
 keyed based on a composite of the response URL and the `HX-Request` request header —
 rather than being based just on the response URL. Always disable `htmx.config.historyRestoreAsHxRequest`
 so that these history full HTML requests are not cached with partial fragment responses.
+You can also now use `Vary: HX-Request-Type` as a newer more consistent alterntaive to `HX-Request`.
 
 If you are unable (or unwilling) to use the `Vary` header, you can alternatively set the configuration parameter
 `getCacheBusterParam` to `true`.  If this configuration variable is set, htmx will include a cache-busting parameter

@@ -98,6 +98,7 @@ All other attributes available in htmx.
 | `HX-History-Restore-Request` | "true" if the request is for history restoration after a miss in the local history cache
 | `HX-Prompt` | the user response to an [hx-prompt](@/attributes/hx-prompt.md)
 | `HX-Request` | always "true"
+| [`HX-Request-Type`](@/headers/hx-request-type.md) | set to "partial" for requests that expect partial fragments and not set for full page requests targeting body
 | `HX-Target` | the `id` of the target element if it exists
 | `HX-Trigger-Name` | the `name` of the triggered element if it exists
 | `HX-Trigger` | the `id` of the triggered element if it exists
