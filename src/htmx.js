@@ -3685,9 +3685,9 @@ var htmx = (function() {
       const selectOOB = getClosestAttributeValue(elt, 'hx-select-oob')
       const select = getClosestAttributeValue(elt, 'hx-select')
       if (select) {
-        headers['HX-Response-Type'] = 'hx-select:' + select + (selectOOB ? ',' + selectOOB : '')
+        headers['HX-Request-Type'] = 'hx-select:' + select + (selectOOB ? ',' + selectOOB : '')
       } else {
-        headers['HX-Response-Type'] = 'partial'
+        headers['HX-Request-Type'] = 'partial'
       }
     }
     return headers

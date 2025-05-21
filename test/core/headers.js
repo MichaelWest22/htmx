@@ -463,4 +463,59 @@ describe('Core htmx AJAX headers', function() {
     htmx._('loadHistoryFromServer')('/test')
     this.server.respond()
   })
+
+  it('should include the HX-Request-Type header set to partial for partial page updates', function() {
+    this.server.respondWith('GET', '/test', function(xhr) {
+      xhr.requestHeaders['HX-Request-Type'].should.be.equal('partial')
+      xhr.respond(200, {}, '')
+    })
+    var div = make('<div hx-get="/test"></div>')
+    div.click()
+    this.server.respond()
+  })
+
+  it('should not include the HX-Request-Type header for full page updates', function() {
+    this.server.respondWith('GET', '/test', function(xhr) {
+      should.equal(xhr.requestHeaders['HX-Request-Type'], undefined)
+      xhr.respond(204, {}, '')
+    })
+    var div = make('<div hx-get="/test" hx-target="body"></div>')
+    div.click()
+    this.server.respond()
+  })
+
+  it('should include the HX-Request-Type header set to hx-select for full page responses with hx-selects', function() {
+    this.server.respondWith('GET', '/test', function(xhr) {
+      xhr.requestHeaders['HX-Request-Type'].should.be.equal('hx-select:#main')
+      xhr.respond(200, {}, '<body><div id="main">Select</div>')
+    })
+    var div = make('<div id="main" hx-get="/test" hx-swap="outerHTML" hx-select="#main"></div>')
+    div.click()
+    this.server.respond()
+    byId('main').innerHTML.should.equal('Select')
+  })
+
+  it('should include the HX-Request-Type header set to hx-select for full page responses with hx-selects and hx-select-oobs', function() {
+    this.server.respondWith('GET', '/test', function(xhr) {
+      xhr.requestHeaders['HX-Request-Type'].should.be.equal('hx-select:#main,#alert')
+      xhr.respond(200, {}, '<body><div id="main">Select</div><div id="alert">Alert</div></body>')
+    })
+    var div = make('<div id="main" hx-get="/test" hx-swap="outerHTML" hx-select="#main" hx-select-oob="#alert"></div>')
+    make('<div id="alert"></div>')
+    div.click()
+    this.server.respond()
+    byId('main').innerHTML.should.equal('Select')
+    byId('alert').innerHTML.should.equal('Alert')
+  })
+
+  it('request to restore history should not include the HX-Request-Type header for full page loads', function() {
+    htmx.config.historyRestoreAsHxRequest = false
+    this.server.respondWith('GET', '/test', function(xhr) {
+      should.equal(xhr.requestHeaders['HX-Request-Type'], undefined)
+      xhr.respond(200, {}, '')
+    })
+    htmx._('loadHistoryFromServer')('/test')
+    this.server.respond()
+    htmx.config.historyRestoreAsHxRequest = true
+  })
 })
