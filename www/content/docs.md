@@ -588,11 +588,15 @@ To understand how CSS transitions actually work in htmx, you must understand the
 
 When new content is received from a server, before the content is swapped in, the existing
 content of the page is examined for elements that match by the `id` attribute.  If a match
-is found for an element in the new content, the attributes of the old content are copied
+is found for an element in the new content, some attributes of the old content are copied
 onto the new element before the swap occurs.  The new content is then swapped in, but with the
 *old* attribute values.  Finally, the new attribute values are swapped in, after a "settle" delay
 (20ms by default).  A little crazy, but this is what allows CSS transitions to work without any javascript by
-the developer.
+the developer. by default the attributes copied in this way are `class`, `style`, `width` and `height`.
+
+#### Disabling Settle and CSS Transitions when required {#disable_settle}
+
+The above delayed settle logic for allowing CSS Transitions to function can cause timing problems for some 3rd party library if it modifies the `class`, `style`, `width` or `height` attributes after the content is swapped in but before the settle finishes as it will undo any custom changes applied to these attributes. You can set the `htmx.config.attributesToSettle` config to remove some or all of these attributes or set `htmx.config.defaultSettleDelay` to 0 but this can prevent some CSS transitions from firing as expected. You can also disable the settle of a single request by adding `settle:0s` to its [hx-swap](@/attributes/hx-swap.md). Another option is to use the [htmx:afterSettle](@/events.md#htmx:afterSettle) event to re-apply any custom javascript changes that may have been lost.
 
 ### Out of Band Swaps {#oob_swaps}
 
