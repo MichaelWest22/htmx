@@ -1863,6 +1863,8 @@ var htmx = (function() {
       swapOptions = {}
     }
 
+    maybeCall(swapOptions.beforeSwapCallback)
+
     target = resolveTarget(target)
     const rootNode = swapOptions.contextElement ? getRootNode(swapOptions.contextElement, false) : getDocument()
 
@@ -1956,9 +1958,7 @@ var htmx = (function() {
       }
       triggerEvent(elt, 'htmx:afterSwap', swapOptions.eventInfo)
     })
-    if (swapOptions.afterSwapCallback) {
-      swapOptions.afterSwapCallback()
-    }
+    maybeCall(swapOptions.afterSwapCallback)
 
     // merge in new title after swap but before settle
     if (!swapSpec.ignoreTitle) {
@@ -1985,9 +1985,7 @@ var htmx = (function() {
       }
 
       updateScrollState(settleInfo.elts, swapSpec)
-      if (swapOptions.afterSettleCallback) {
-        swapOptions.afterSettleCallback()
-      }
+      maybeCall(swapOptions.afterSettleCallback)
     }
 
     if (swapSpec.settleDelay > 0) {
@@ -4792,8 +4790,8 @@ var htmx = (function() {
       target.classList.add(htmx.config.swappingClass)
 
       // optional transition API promise callbacks
-      let settleResolve = null
-      let settleReject = null
+      // let settleResolve = null
+      // let settleReject = null
 
       if (responseInfoSelect) {
         selectOverride = responseInfoSelect
@@ -4806,53 +4804,52 @@ var htmx = (function() {
       const selectOOB = getClosestAttributeValue(elt, 'hx-select-oob')
       const select = getClosestAttributeValue(elt, 'hx-select')
 
-      let doSwap = function() {
-        try {
-          // if we need to save history, do so, before swapping so that relative resources have the correct base URL
-          if (historyUpdate.type) {
-            triggerEvent(getDocument().body, 'htmx:beforeHistoryUpdate', mergeObjects({ history: historyUpdate }, responseInfo))
-            if (historyUpdate.type === 'push') {
-              pushUrlIntoHistory(historyUpdate.path)
-              triggerEvent(getDocument().body, 'htmx:pushedIntoHistory', { path: historyUpdate.path })
-            } else {
-              replaceUrlInHistory(historyUpdate.path)
-              triggerEvent(getDocument().body, 'htmx:replacedInHistory', { path: historyUpdate.path })
+      try {
+        swap(target, serverResponse, swapSpec, {
+          select: selectOverride || select,
+          selectOOB,
+          eventInfo: responseInfo,
+          anchor: responseInfo.pathInfo.anchor,
+          contextElement: elt,
+          afterSwapCallback: function() {
+            if (hasHeader(xhr, /HX-Trigger-After-Swap:/i)) {
+              let finalElt = elt
+              if (!bodyContains(elt)) {
+                finalElt = getDocument().body
+              }
+              handleTriggerHeader(xhr, 'HX-Trigger-After-Swap', finalElt)
+            }
+          },
+          afterSettleCallback: function() {
+            if (hasHeader(xhr, /HX-Trigger-After-Settle:/i)) {
+              let finalElt = elt
+              if (!bodyContains(elt)) {
+                finalElt = getDocument().body
+              }
+              handleTriggerHeader(xhr, 'HX-Trigger-After-Settle', finalElt)
+            }
+            // maybeCall(settleResolve)
+          },
+          beforeSwapCallback: function() {
+            // if we need to save history, do so, before swapping so that relative resources have the correct base URL
+            if (historyUpdate.type) {
+              triggerEvent(getDocument().body, 'htmx:beforeHistoryUpdate', mergeObjects({ history: historyUpdate }, responseInfo))
+              if (historyUpdate.type === 'push') {
+                pushUrlIntoHistory(historyUpdate.path)
+                triggerEvent(getDocument().body, 'htmx:pushedIntoHistory', { path: historyUpdate.path })
+              } else {
+                replaceUrlInHistory(historyUpdate.path)
+                triggerEvent(getDocument().body, 'htmx:replacedInHistory', { path: historyUpdate.path })
+              }
             }
           }
-
-          swap(target, serverResponse, swapSpec, {
-            select: selectOverride || select,
-            selectOOB,
-            eventInfo: responseInfo,
-            anchor: responseInfo.pathInfo.anchor,
-            contextElement: elt,
-            afterSwapCallback: function() {
-              if (hasHeader(xhr, /HX-Trigger-After-Swap:/i)) {
-                let finalElt = elt
-                if (!bodyContains(elt)) {
-                  finalElt = getDocument().body
-                }
-                handleTriggerHeader(xhr, 'HX-Trigger-After-Swap', finalElt)
-              }
-            },
-            afterSettleCallback: function() {
-              if (hasHeader(xhr, /HX-Trigger-After-Settle:/i)) {
-                let finalElt = elt
-                if (!bodyContains(elt)) {
-                  finalElt = getDocument().body
-                }
-                handleTriggerHeader(xhr, 'HX-Trigger-After-Settle', finalElt)
-              }
-              maybeCall(settleResolve)
-            }
-          })
-        } catch (e) {
-          triggerErrorEvent(elt, 'htmx:swapError', responseInfo)
-          maybeCall(settleReject)
-          throw e
-        }
+        })
+      } catch (e) {
+        triggerErrorEvent(elt, 'htmx:swapError', responseInfo)
+        // maybeCall(settleReject)
+        throw e
       }
-
+      /*
       let shouldTransition = htmx.config.globalViewTransitions
       if (swapSpec.hasOwnProperty('transition')) {
         shouldTransition = swapSpec.transition
@@ -4883,6 +4880,7 @@ var htmx = (function() {
       } else {
         doSwap()
       }
+      */
     }
     if (isError) {
       triggerErrorEvent(elt, 'htmx:responseError', mergeObjects({ error: 'Response Status Error Code ' + xhr.status + ' from ' + responseInfo.pathInfo.requestPath }, responseInfo))
@@ -5083,6 +5081,7 @@ var htmx = (function() {
  * @property {Element} [contextElement]
  * @property {swapCallback} [afterSwapCallback]
  * @property {swapCallback} [afterSettleCallback]
+ * @property {swapCallback} [beforeSwapCallback]
  * @property {string} [title]
  * @property {boolean} [historyRequest]
  */
