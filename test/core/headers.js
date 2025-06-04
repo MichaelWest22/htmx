@@ -509,13 +509,22 @@ describe('Core htmx AJAX headers', function() {
   })
 
   it('request to restore history should not include the HX-Request-Type header for full page loads', function() {
-    htmx.config.historyRestoreAsHxRequest = false
     this.server.respondWith('GET', '/test', function(xhr) {
       should.equal(xhr.requestHeaders['HX-Request-Type'], undefined)
-      xhr.respond(200, {}, '')
+      xhr.respond(500, {}, '')
+    })
+    getWorkArea().removeAttribute('hx-history-elt')
+    htmx._('loadHistoryFromServer')('/test')
+    this.server.respond()
+    getWorkArea().setAttribute('hx-history-elt', '')
+  })
+
+  it('request to restore history should include the HX-Request-Type hx-history-elt when present', function() {
+    this.server.respondWith('GET', '/test', function(xhr) {
+      should.equal(xhr.requestHeaders['HX-Request-Type'], 'hx-history-elt')
+      xhr.respond(500, {}, '')
     })
     htmx._('loadHistoryFromServer')('/test')
     this.server.respond()
-    htmx.config.historyRestoreAsHxRequest = true
   })
 })

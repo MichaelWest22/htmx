@@ -3299,6 +3299,9 @@ var htmx = (function() {
     }
     request.setRequestHeader('HX-History-Restore-Request', 'true')
     request.setRequestHeader('HX-Current-URL', location.href)
+    if (details.historyElt !== getDocument().body) {
+      request.setRequestHeader('HX-Request-Type', 'hx-history-elt')
+    }
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
         details.response = this.response

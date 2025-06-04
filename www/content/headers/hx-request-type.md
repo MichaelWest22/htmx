@@ -6,9 +6,10 @@ This new header returns the type of request being sent so the backend server and
 
 ### HX-Request-Type respone values
 
-* `not set` - The header will not be set at all for full page requests initiated by the browser, history restore requets or requests that target the body like most [`hx-boost`](@/attributes/hx-boost.md)  requests
+* `not set` - The header will not be set at all for full page requests initiated by the browser, history restore requets or requests that target the body like most [`hx-boost`](@/attributes/hx-boost.md) requests
 * `partial` - The request is targeting replacment of part of the page so expects a partial page fragment as a response
 * `hx-select:<list of selectors>` - The request is expecting a large or full request that should include elements that match the comma seperated list of CSS selectors supplied. All the [`hx-select`](@/attributes/hx-select.md) and [`hx-select-oob`](@/attributes/hx-select-oob.md) selectors from the requesting element will be included.
+* `hx-history-elt` - When the request is a history restore request that is expecting an element with [`hx-history-elt`](@/attributes/hx-history-elt.md) that will replace just this element on the page
 
 ### How to use
 
