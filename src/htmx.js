@@ -3198,6 +3198,7 @@ var htmx = (function() {
   function loadHistoryFromServer(path) {
     const request = new XMLHttpRequest()
     const details = { path, xhr: request }
+    const historyElement = getHistoryElement()
     triggerEvent(getDocument().body, 'htmx:historyCacheMiss', details)
     request.open('GET', path, true)
     if (htmx.config.historyRestoreAsHxRequest) {
@@ -3205,13 +3206,15 @@ var htmx = (function() {
     }
     request.setRequestHeader('HX-History-Restore-Request', 'true')
     request.setRequestHeader('HX-Current-URL', location.href)
+    if (historyElement !== getDocument().body) {
+      request.setRequestHeader('HX-Request-Type', 'hx-history-elt')
+    }
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
         triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', details)
         const fragment = makeFragment(this.response)
         /** @type ParentNode */
         const content = fragment.querySelector('[hx-history-elt],[data-hx-history-elt]') || fragment
-        const historyElement = getHistoryElement()
         const settleInfo = makeSettleInfo(historyElement)
         handleTitle(fragment.title)
 
