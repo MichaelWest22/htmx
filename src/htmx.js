@@ -284,7 +284,7 @@ var htmx = (function() {
     parseInterval: null,
     /**
      * proxy of window.location used for page reload functions
-     * @type location
+     * type location
      */
     location,
     /** @type {typeof internalEval} */
@@ -1286,7 +1286,7 @@ var htmx = (function() {
       return {
         target: resolveTarget(arg1),
         event: asString(arg2),
-        listener: arg3,
+        listener: /** @type EventListener */(arg3),
         options: arg4
       }
     }
@@ -1309,7 +1309,7 @@ var htmx = (function() {
       eventArgs.target.addEventListener(eventArgs.event, eventArgs.listener, eventArgs.options)
     })
     const b = isFunction(arg2)
-    return b ? arg2 : arg3
+    return b ? arg2 : /** @type EventListener */(arg3)
   }
 
   /**
@@ -1884,8 +1884,7 @@ var htmx = (function() {
 
       // preserve focus and selection
       const activeElt = document.activeElement
-      let selectionInfo = {}
-      selectionInfo = {
+      const selectionInfo = {
         elt: activeElt,
         // @ts-ignore
         start: activeElt ? activeElt.selectionStart : null,
@@ -2697,9 +2696,10 @@ var htmx = (function() {
       addEventListener(elt, handler, nodeData, triggerSpec)
       maybeReveal(asElement(elt))
     } else if (triggerSpec.trigger === 'intersect') {
+      /** @type {IntersectionObserverInit} */
       const observerOptions = {}
       if (triggerSpec.root) {
-        observerOptions.root = querySelectorExt(elt, triggerSpec.root)
+        observerOptions.root = /** @type {Element} */ (querySelectorExt(elt, triggerSpec.root))
       }
       if (triggerSpec.threshold) {
         observerOptions.threshold = parseFloat(triggerSpec.threshold)
@@ -4429,10 +4429,7 @@ var htmx = (function() {
     }
 
     /**
-     * @type {Object}
-     * @property {boolean} [credentials]
-     * @property {number} [timeout]
-     * @property {boolean} [noHeaders]
+     * @type {{credentials?: boolean, timeout?: number, noHeaders?: boolean}}
      */
     const requestAttrValues = getValuesForElement(elt, 'hx-request')
 
@@ -4756,7 +4753,7 @@ var htmx = (function() {
   /**
    * Resove the Retarget selector and throw if not found
    * @param {Element} elt
-   * @param {String} target
+   * @param {string} target
    * @returns {Element}
    */
   function resolveRetarget(elt, target) {
@@ -4950,7 +4947,7 @@ var htmx = (function() {
   // Extensions API
   //= ===================================================================
 
-  /** @type {Object<string, HtmxExtension>} */
+  /** @type {Record<string, HtmxExtension>} */
   const extensions = {}
 
   /**
