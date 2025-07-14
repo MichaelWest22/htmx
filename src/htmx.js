@@ -643,6 +643,19 @@ var htmx = (function() {
   }
 
   /**
+   * @param {function} callback
+   * @param {number} [delay]
+   * @return {number}
+   */
+  function maybeDelay(callback, delay) {
+    if (delay && delay > 0) {
+      return getWindow().setTimeout(callback, delay)
+    } else {
+      callback()
+    }
+  }
+
+  /**
    * @param {any} o
    * @param {string} type
    * @returns
@@ -943,14 +956,9 @@ var htmx = (function() {
    */
   function removeElement(elt, delay) {
     elt = resolveTarget(elt)
-    if (delay) {
-      getWindow().setTimeout(function() {
-        removeElement(elt)
-        elt = null
-      }, delay)
-    } else {
+    maybeDelay(function() {
       parentElt(elt).removeChild(elt)
-    }
+    }, delay)
   }
 
   /**
@@ -999,14 +1007,9 @@ var htmx = (function() {
     if (!elt) {
       return
     }
-    if (delay) {
-      getWindow().setTimeout(function() {
-        addClassToElement(elt, clazz)
-        elt = null
-      }, delay)
-    } else {
+    maybeDelay(function() {
       elt.classList && elt.classList.add(clazz)
-    }
+    }, delay)
   }
 
   /**
@@ -1019,24 +1022,17 @@ var htmx = (function() {
    * @param {number} [delay] the delay (in milliseconds before class is removed)
    */
   function removeClassFromElement(node, clazz, delay) {
-    let elt = asElement(resolveTarget(node))
+    const elt = asElement(resolveTarget(node))
     if (!elt) {
       return
     }
-    if (delay) {
-      getWindow().setTimeout(function() {
-        removeClassFromElement(elt, clazz)
-        elt = null
-      }, delay)
-    } else {
-      if (elt.classList) {
-        elt.classList.remove(clazz)
-        // if there are no classes left, remove the class attribute
-        if (elt.classList.length === 0) {
-          elt.removeAttribute('class')
-        }
+    maybeDelay(function() {
+      elt.classList.remove(clazz)
+      // if there are no classes left, remove the class attribute
+      if (elt.classList.length === 0) {
+        elt.removeAttribute('class')
       }
-    }
+    }, delay)
   }
 
   /**
@@ -2002,12 +1998,7 @@ var htmx = (function() {
         maybeCall(swapOptions.afterSettleCallback)
         maybeCall(settleResolve)
       }
-
-      if (swapSpec.settleDelay > 0) {
-        getWindow().setTimeout(doSettle, swapSpec.settleDelay)
-      } else {
-        doSettle()
-      }
+      maybeDelay(doSettle, swapSpec.settleDelay)
     }
     let shouldTransition = htmx.config.globalViewTransitions
     if (swapSpec.hasOwnProperty('transition')) {
@@ -2037,11 +2028,7 @@ var htmx = (function() {
     }
 
     try {
-      if (swapSpec?.swapDelay && swapSpec.swapDelay > 0) {
-        getWindow().setTimeout(doSwap, swapSpec.swapDelay)
-      } else {
-        doSwap()
-      }
+      maybeDelay(doSwap, swapSpec?.swapDelay)
     } catch (e) {
       triggerErrorEvent(elt, 'htmx:swapError', swapOptions.eventInfo)
       maybeCall(settleReject)
@@ -2568,14 +2555,11 @@ var htmx = (function() {
                 elementData.throttle = null
               }, triggerSpec.throttle)
             }
-          } else if (triggerSpec.delay > 0) {
-            elementData.delayed = getWindow().setTimeout(function() {
+          } else {
+            elementData.delayed = maybeDelay(function() {
               triggerEvent(elt, 'htmx:trigger')
               handler(elt, evt)
             }, triggerSpec.delay)
-          } else {
-            triggerEvent(elt, 'htmx:trigger')
-            handler(elt, evt)
           }
         }
       }
@@ -2643,11 +2627,7 @@ var htmx = (function() {
         handler(elt)
       }
     }
-    if (delay > 0) {
-      getWindow().setTimeout(load, delay)
-    } else {
-      load()
-    }
+    maybeDelay(load, delay)
   }
 
   /**
