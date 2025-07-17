@@ -356,6 +356,10 @@ var htmx = (function() {
     return '[hx-' + verb + '], [data-hx-' + verb + ']'
   }).join(', ')
 
+  const doc = document
+  const docBody = doc.body
+  const win = window
+
   //= ===================================================================
   // Utilities
   //= ===================================================================
@@ -429,19 +433,12 @@ var htmx = (function() {
   }
 
   /**
-   * @returns {Document}
-   */
-  function getDocument() {
-    return document
-  }
-
-  /**
    * @param {Node} elt
    * @param {boolean} global
    * @returns {Node|Document}
    */
   function getRootNode(elt, global) {
-    return elt.getRootNode ? elt.getRootNode({ composed: global }) : getDocument()
+    return elt.getRootNode ? elt.getRootNode({ composed: global }) : doc
   }
 
   /**
@@ -544,7 +541,7 @@ var htmx = (function() {
    * @returns {HTMLScriptElement}
    */
   function duplicateScript(script) {
-    const newScript = getDocument().createElement('script')
+    const newScript = doc.createElement('script')
     forEach(script.attributes, function(attr) {
       newScript.setAttribute(attr.name, attr.value)
     })
@@ -767,7 +764,7 @@ var htmx = (function() {
     const rect = el.getBoundingClientRect()
     const elemTop = rect.top
     const elemBottom = rect.bottom
-    return elemTop < window.innerHeight && elemBottom >= 0
+    return elemTop < win.innerHeight && elemBottom >= 0
   }
 
   /**
@@ -862,7 +859,7 @@ var htmx = (function() {
    * @returns {any}
    */
   function internalEval(str) {
-    return maybeEval(getDocument().body, function() {
+    return maybeEval(docBody, function() {
       return eval(str)
     })
   }
@@ -912,7 +909,7 @@ var htmx = (function() {
     if (typeof eltOrSelector !== 'string') {
       return eltOrSelector.querySelector(selector)
     } else {
-      return find(getDocument(), eltOrSelector)
+      return find(doc, eltOrSelector)
     }
   }
 
@@ -929,15 +926,8 @@ var htmx = (function() {
     if (typeof eltOrSelector !== 'string') {
       return eltOrSelector.querySelectorAll(selector)
     } else {
-      return findAll(getDocument(), eltOrSelector)
+      return findAll(doc, eltOrSelector)
     }
-  }
-
-  /**
-   * @returns Window
-   */
-  function getWindow() {
-    return window
   }
 
   /**
@@ -951,7 +941,7 @@ var htmx = (function() {
   function removeElement(elt, delay) {
     elt = resolveTarget(elt)
     if (delay) {
-      getWindow().setTimeout(function() {
+      win.setTimeout(function() {
         removeElement(elt)
         elt = null
       }, delay)
@@ -1007,7 +997,7 @@ var htmx = (function() {
       return
     }
     if (delay) {
-      getWindow().setTimeout(function() {
+      win.setTimeout(function() {
         addClassToElement(elt, clazz)
         elt = null
       }, delay)
@@ -1031,7 +1021,7 @@ var htmx = (function() {
       return
     }
     if (delay) {
-      getWindow().setTimeout(function() {
+      win.setTimeout(function() {
         removeClassFromElement(elt, clazz)
         elt = null
       }, delay)
@@ -1098,7 +1088,7 @@ var htmx = (function() {
    * @returns {boolean}
    */
   function startsWith(str, prefix) {
-    return str.substring(0, prefix.length) === prefix
+    return str.startsWith(prefix)
   }
 
   /**
@@ -1107,7 +1097,7 @@ var htmx = (function() {
    * @returns {boolean}
    */
   function endsWith(str, suffix) {
-    return str.substring(str.length - suffix.length) === suffix
+    return str.endsWith(suffix)
   }
 
   /**
@@ -1176,11 +1166,11 @@ var htmx = (function() {
       } else if (selector.indexOf('previous ') === 0) {
         item = scanBackwardsQuery(elt, normalizeSelector(selector.slice(9)), !!global)
       } else if (selector === 'document') {
-        item = document
+        item = doc
       } else if (selector === 'window') {
-        item = window
+        item = win
       } else if (selector === 'body') {
-        item = document.body
+        item = docBody
       } else if (selector === 'root') {
         item = getRootNode(elt, !!global)
       } else if (selector === 'host') {
@@ -1244,7 +1234,7 @@ var htmx = (function() {
     if (typeof eltOrSelector !== 'string') {
       return querySelectorAllExt(eltOrSelector, selector)[0]
     } else {
-      return querySelectorAllExt(getDocument().body, eltOrSelector)[0]
+      return querySelectorAllExt(docBody, eltOrSelector)[0]
     }
   }
 
@@ -1284,7 +1274,7 @@ var htmx = (function() {
   function processEventArgs(arg1, arg2, arg3, arg4) {
     if (isFunction(arg2)) {
       return {
-        target: getDocument().body,
+        target: docBody,
         event: asString(arg1),
         listener: arg2,
         options: arg3
@@ -1341,7 +1331,7 @@ var htmx = (function() {
   // Node processing
   //= ===================================================================
 
-  const DUMMY_ELT = getDocument().createElement('output') // dummy element for bad selectors
+  const DUMMY_ELT = doc.createElement('output') // dummy element for bad selectors
   /**
    * @param {Element} elt
    * @param {string} attrName
@@ -1400,7 +1390,7 @@ var htmx = (function() {
     } else {
       const data = getInternalData(elt)
       if (data.boosted) {
-        return getDocument().body
+        return docBody
       } else {
         return elt
       }
@@ -1460,7 +1450,7 @@ var htmx = (function() {
    * @returns
    */
   function oobSwap(oobValue, oobElement, settleInfo, rootNode) {
-    rootNode = rootNode || getDocument()
+    rootNode = rootNode || doc
     let selector = '#' + CSS.escape(getRawAttribute(oobElement, 'id'))
     /** @type HtmxSwapStyle */
     let swapStyle = 'outerHTML'
@@ -1482,7 +1472,7 @@ var htmx = (function() {
         function(target) {
           let fragment
           const oobElementClone = oobElement.cloneNode(true)
-          fragment = getDocument().createDocumentFragment()
+          fragment = doc.createDocumentFragment()
           fragment.appendChild(oobElementClone)
           if (!isInlineSwap(swapStyle, target)) {
             fragment = asParentNode(oobElementClone) // if this is not an inline swap, we use the content of the node, not the node itself
@@ -1505,7 +1495,7 @@ var htmx = (function() {
       oobElement.parentNode.removeChild(oobElement)
     } else {
       oobElement.parentNode.removeChild(oobElement)
-      triggerErrorEvent(getDocument().body, 'htmx:oobErrorNoTarget', { content: oobElement })
+      triggerErrorEvent(docBody, 'htmx:oobErrorNoTarget', { content: oobElement })
     }
     return oobValue
   }
@@ -1529,13 +1519,13 @@ var htmx = (function() {
   function handlePreservedElements(fragment) {
     forEach(findAll(fragment, '[hx-preserve], [data-hx-preserve]'), function(preservedElt) {
       const id = getAttributeValue(preservedElt, 'id')
-      const existingElement = getDocument().getElementById(id)
+      const existingElement = doc.getElementById(id)
       if (existingElement != null) {
         if (preservedElt.moveBefore) { // if the moveBefore API exists, use it
           // get or create a storage spot for stuff
           let pantry = find('#--htmx-preserve-pantry--')
           if (pantry == null) {
-            getDocument().body.insertAdjacentHTML('afterend', "<div id='--htmx-preserve-pantry--'></div>")
+            docBody.insertAdjacentHTML('afterend', "<div id='--htmx-preserve-pantry--'></div>")
             pantry = find('#--htmx-preserve-pantry--')
           }
           // @ts-ignore - use proposed moveBefore feature
@@ -1887,10 +1877,10 @@ var htmx = (function() {
       maybeCall(swapOptions.beforeSwapCallback)
 
       target = resolveTarget(target)
-      const rootNode = swapOptions.contextElement ? getRootNode(swapOptions.contextElement, false) : getDocument()
+      const rootNode = swapOptions.contextElement ? getRootNode(swapOptions.contextElement, false) : doc
 
       // preserve focus and selection
-      const activeElt = document.activeElement
+      const activeElt = doc.activeElement
       let selectionInfo = {}
       selectionInfo = {
         elt: activeElt,
@@ -1941,7 +1931,7 @@ var htmx = (function() {
 
         // normal swap
         if (swapOptions.select) {
-          const newFragment = getDocument().createDocumentFragment()
+          const newFragment = doc.createDocumentFragment()
           forEach(fragment.querySelectorAll(swapOptions.select), function(node) {
             newFragment.appendChild(node)
           })
@@ -1956,7 +1946,7 @@ var htmx = (function() {
       if (selectionInfo.elt &&
         !bodyContains(selectionInfo.elt) &&
         getRawAttribute(selectionInfo.elt, 'id')) {
-        const newActiveElt = document.getElementById(getRawAttribute(selectionInfo.elt, 'id'))
+        const newActiveElt = doc.getElementById(getRawAttribute(selectionInfo.elt, 'id'))
         const focusOptions = { preventScroll: swapSpec.focusScroll !== undefined ? !swapSpec.focusScroll : !htmx.config.defaultFocusScroll }
         if (newActiveElt) {
           // @ts-ignore
@@ -2011,7 +2001,7 @@ var htmx = (function() {
       }
 
       if (swapSpec.settleDelay > 0) {
-        getWindow().setTimeout(doSettle, swapSpec.settleDelay)
+        win.setTimeout(doSettle, swapSpec.settleDelay)
       } else {
         doSettle()
       }
@@ -2021,13 +2011,13 @@ var htmx = (function() {
       shouldTransition = swapSpec.transition
     }
 
-    const elt = swapOptions.contextElement || getDocument()
+    const elt = swapOptions.contextElement || doc
 
     if (shouldTransition &&
             triggerEvent(elt, 'htmx:beforeTransition', swapOptions.eventInfo) &&
             typeof Promise !== 'undefined' &&
             // @ts-ignore experimental feature atm
-            document.startViewTransition) {
+            doc.startViewTransition) {
       const settlePromise = new Promise(function(_resolve, _reject) {
         settleResolve = _resolve
         settleReject = _reject
@@ -2036,7 +2026,7 @@ var htmx = (function() {
       const innerDoSwap = doSwap
       doSwap = function() {
         // @ts-ignore experimental feature atm
-        document.startViewTransition(function() {
+        doc.startViewTransition(function() {
           innerDoSwap()
           return settlePromise
         })
@@ -2045,7 +2035,7 @@ var htmx = (function() {
 
     try {
       if (swapSpec?.swapDelay && swapSpec.swapDelay > 0) {
-        getWindow().setTimeout(doSwap, swapSpec.swapDelay)
+        win.setTimeout(doSwap, swapSpec.swapDelay)
       } else {
         doSwap()
       }
@@ -2175,7 +2165,7 @@ var htmx = (function() {
               conditionFunction.source = conditionalSource
               return conditionFunction
             } catch (e) {
-              triggerErrorEvent(getDocument().body, 'htmx:syntax:error', { error: e, source: conditionalSource })
+              triggerErrorEvent(docBody, 'htmx:syntax:error', { error: e, source: conditionalSource })
               return null
             }
           }
@@ -2357,7 +2347,7 @@ var htmx = (function() {
    */
   function processPolling(elt, handler, spec) {
     const nodeData = getInternalData(elt)
-    nodeData.timeout = getWindow().setTimeout(function() {
+    nodeData.timeout = win.setTimeout(function() {
       if (bodyContains(elt) && nodeData.cancelled !== true) {
         if (!maybeFilterEvent(spec, elt, makeEvent('hx:poll:trigger', {
           triggerSpec: spec,
@@ -2478,7 +2468,7 @@ var htmx = (function() {
         return eventFilter.call(elt, evt) !== true
       } catch (e) {
         const source = eventFilter.source
-        triggerErrorEvent(getDocument().body, 'htmx:eventFilter:error', { error: e, source })
+        triggerErrorEvent(docBody, 'htmx:eventFilter:error', { error: e, source })
         return true
       }
     }
@@ -2573,12 +2563,12 @@ var htmx = (function() {
             if (!elementData.throttle) {
               triggerEvent(elt, 'htmx:trigger')
               handler(elt, evt)
-              elementData.throttle = getWindow().setTimeout(function() {
+              elementData.throttle = win.setTimeout(function() {
                 elementData.throttle = null
               }, triggerSpec.throttle)
             }
           } else if (triggerSpec.delay > 0) {
-            elementData.delayed = getWindow().setTimeout(function() {
+            elementData.delayed = win.setTimeout(function() {
               triggerEvent(elt, 'htmx:trigger')
               handler(elt, evt)
             }, triggerSpec.delay)
@@ -2607,12 +2597,12 @@ var htmx = (function() {
       scrollHandler = function() {
         windowIsScrolling = true
       }
-      window.addEventListener('scroll', scrollHandler)
-      window.addEventListener('resize', scrollHandler)
+      win.addEventListener('scroll', scrollHandler)
+      win.addEventListener('resize', scrollHandler)
       setInterval(function() {
         if (windowIsScrolling) {
           windowIsScrolling = false
-          forEach(getDocument().querySelectorAll("[hx-trigger*='revealed'],[data-hx-trigger*='revealed']"), function(elt) {
+          forEach(doc.querySelectorAll("[hx-trigger*='revealed'],[data-hx-trigger*='revealed']"), function(elt) {
             maybeReveal(elt)
           })
         }
@@ -2653,7 +2643,7 @@ var htmx = (function() {
       }
     }
     if (delay > 0) {
-      getWindow().setTimeout(load, delay)
+      win.setTimeout(load, delay)
     } else {
       load()
     }
@@ -3140,8 +3130,8 @@ var htmx = (function() {
    * @returns {Element}
    */
   function getHistoryElement() {
-    const historyElt = getDocument().querySelector('[hx-history-elt],[data-hx-history-elt]')
-    return historyElt || getDocument().body
+    const historyElt = doc.querySelector('[hx-history-elt],[data-hx-history-elt]')
+    return historyElt || docBody
   }
 
   /**
@@ -3155,8 +3145,8 @@ var htmx = (function() {
 
     // get state to save
     const innerHTML = cleanInnerHtmlForHistory(rootElt)
-    const title = getDocument().title
-    const scroll = window.scrollY
+    const title = doc.title
+    const scroll = win.scrollY
 
     if (htmx.config.historyCacheSize <= 0) {
       // make sure that an eventually already existing cache is purged
@@ -3177,7 +3167,7 @@ var htmx = (function() {
     /** @type HtmxHistoryItem */
     const newHistoryItem = { url, content: innerHTML, title, scroll }
 
-    triggerEvent(getDocument().body, 'htmx:historyItemCreated', { item: newHistoryItem, cache: historyCache })
+    triggerEvent(docBody, 'htmx:historyItemCreated', { item: newHistoryItem, cache: historyCache })
 
     historyCache.push(newHistoryItem)
     while (historyCache.length > htmx.config.historyCacheSize) {
@@ -3190,7 +3180,7 @@ var htmx = (function() {
         sessionStorage.setItem('htmx-history-cache', JSON.stringify(historyCache))
         break
       } catch (e) {
-        triggerErrorEvent(getDocument().body, 'htmx:historyCacheError', { cause: e, cache: historyCache })
+        triggerErrorEvent(docBody, 'htmx:historyCacheError', { cause: e, cache: historyCache })
         historyCache.shift() // shrink the cache and retry
       }
     }
@@ -3254,13 +3244,13 @@ var htmx = (function() {
     // so we can prevent privileged data entering the cache.
     // The page will still be reachable as a history entry, but htmx will fetch it
     // live from the server onpopstate rather than look in the sessionStorage cache
-    const disableHistoryCache = getDocument().querySelector('[hx-history="false" i],[data-hx-history="false" i]')
+    const disableHistoryCache = doc.querySelector('[hx-history="false" i],[data-hx-history="false" i]')
     if (!disableHistoryCache) {
-      triggerEvent(getDocument().body, 'htmx:beforeHistorySave', { path, historyElt: elt })
+      triggerEvent(docBody, 'htmx:beforeHistorySave', { path, historyElt: elt })
       saveToHistoryCache(path, elt)
     }
 
-    if (htmx.config.historyEnabled) history.replaceState({ htmx: true }, getDocument().title, location.href)
+    if (htmx.config.historyEnabled) history.replaceState({ htmx: true }, doc.title, location.href)
   }
 
   /**
@@ -3313,18 +3303,18 @@ var htmx = (function() {
     request.onload = function() {
       if (this.status >= 200 && this.status < 400) {
         details.response = this.response
-        triggerEvent(getDocument().body, 'htmx:historyCacheMissLoad', details)
+        triggerEvent(docBody, 'htmx:historyCacheMissLoad', details)
         swap(details.historyElt, details.response, swapSpec, {
           contextElement: details.historyElt,
           historyRequest: true
         })
         setCurrentPathForHistory(details.path)
-        triggerEvent(getDocument().body, 'htmx:historyRestore', { path, cacheMiss: true, serverResponse: details.response })
+        triggerEvent(docBody, 'htmx:historyRestore', { path, cacheMiss: true, serverResponse: details.response })
       } else {
-        triggerErrorEvent(getDocument().body, 'htmx:historyCacheMissLoadError', details)
+        triggerErrorEvent(docBody, 'htmx:historyCacheMissLoadError', details)
       }
     }
-    if (triggerEvent(getDocument().body, 'htmx:historyCacheMiss', details)) {
+    if (triggerEvent(docBody, 'htmx:historyCacheMiss', details)) {
       request.send() // only send request if event not prevented
     }
   }
@@ -3339,13 +3329,13 @@ var htmx = (function() {
     if (cached) {
       const swapSpec = { swapStyle: 'innerHTML', swapDelay: 0, settleDelay: 0, scroll: cached.scroll }
       const details = { path, item: cached, historyElt: getHistoryElement(), swapSpec }
-      if (triggerEvent(getDocument().body, 'htmx:historyCacheHit', details)) {
+      if (triggerEvent(docBody, 'htmx:historyCacheHit', details)) {
         swap(details.historyElt, cached.content, swapSpec, {
           contextElement: details.historyElt,
           title: cached.title
         })
         setCurrentPathForHistory(details.path)
-        triggerEvent(getDocument().body, 'htmx:historyRestore', details)
+        triggerEvent(docBody, 'htmx:historyRestore', details)
       }
     } else {
       if (htmx.config.refreshOnHistoryMiss) {
@@ -3871,8 +3861,8 @@ var htmx = (function() {
         target.scrollTop = target.scrollHeight
       }
       if (typeof swapSpec.scroll === 'number') {
-        getWindow().setTimeout(function() {
-          window.scrollTo(0, /** @type number */ (swapSpec.scroll))
+        win.setTimeout(function() {
+          win.scrollTo(0, /** @type number */ (swapSpec.scroll))
         }, 0) // next 'tick', so browser has time to render layout
       }
     }
@@ -4024,7 +4014,7 @@ var htmx = (function() {
         const url = new URL(xhr.responseURL)
         return url.pathname + url.search
       } catch (e) {
-        triggerErrorEvent(getDocument().body, 'htmx:badResponseUrl', { url: xhr.responseURL })
+        triggerErrorEvent(docBody, 'htmx:badResponseUrl', { url: xhr.responseURL })
       }
     }
   }
@@ -4101,8 +4091,8 @@ var htmx = (function() {
    * @return {boolean}
    */
   function verifyPath(elt, path, requestConfig) {
-    const url = new URL(path, location.protocol !== 'about:' ? location.href : window.origin)
-    const origin = location.protocol !== 'about:' ? location.origin : window.origin
+    const url = new URL(path, location.protocol !== 'about:' ? location.href : win.origin)
+    const origin = location.protocol !== 'about:' ? location.origin : win.origin
     const sameHost = origin === url.origin
 
     if (htmx.config.selfRequestsOnly) {
@@ -4266,7 +4256,7 @@ var htmx = (function() {
       })
     }
     if (elt == null) {
-      elt = getDocument().body
+      elt = docBody
     }
     const responseHandler = etc.handler || handleAjaxResponse
     const select = etc.select || null
@@ -4766,7 +4756,7 @@ var htmx = (function() {
       if (titleElt) {
         titleElt.textContent = title
       } else {
-        window.document.title = title
+        win.document.title = title
       }
     }
   }
@@ -4930,7 +4920,7 @@ var htmx = (function() {
           if (hasHeader(xhr, /HX-Trigger-After-Swap:/i)) {
             let finalElt = elt
             if (!bodyContains(elt)) {
-              finalElt = getDocument().body
+              finalElt = docBody
             }
             handleTriggerHeader(xhr, 'HX-Trigger-After-Swap', finalElt)
           }
@@ -4939,7 +4929,7 @@ var htmx = (function() {
           if (hasHeader(xhr, /HX-Trigger-After-Settle:/i)) {
             let finalElt = elt
             if (!bodyContains(elt)) {
-              finalElt = getDocument().body
+              finalElt = docBody
             }
             handleTriggerHeader(xhr, 'HX-Trigger-After-Settle', finalElt)
           }
@@ -4947,13 +4937,13 @@ var htmx = (function() {
         beforeSwapCallback: function() {
           // if we need to save history, do so, before swapping so that relative resources have the correct base URL
           if (historyUpdate.type) {
-            triggerEvent(getDocument().body, 'htmx:beforeHistoryUpdate', mergeObjects({ history: historyUpdate }, responseInfo))
+            triggerEvent(docBody, 'htmx:beforeHistoryUpdate', mergeObjects({ history: historyUpdate }, responseInfo))
             if (historyUpdate.type === 'push') {
               pushUrlIntoHistory(historyUpdate.path)
-              triggerEvent(getDocument().body, 'htmx:pushedIntoHistory', { path: historyUpdate.path })
+              triggerEvent(docBody, 'htmx:pushedIntoHistory', { path: historyUpdate.path })
             } else {
               replaceUrlInHistory(historyUpdate.path)
-              triggerEvent(getDocument().body, 'htmx:replacedInHistory', { path: historyUpdate.path })
+              triggerEvent(docBody, 'htmx:replacedInHistory', { path: historyUpdate.path })
             }
           }
         }
@@ -5054,7 +5044,7 @@ var htmx = (function() {
   // Initialization
   //= ===================================================================
   var isReady = false
-  getDocument().addEventListener('DOMContentLoaded', function() {
+  doc.addEventListener('DOMContentLoaded', function() {
     isReady = true
   })
 
@@ -5068,10 +5058,10 @@ var htmx = (function() {
   function ready(fn) {
     // Checking readyState here is a failsafe in case the htmx script tag entered the DOM by
     // some means other than the initial page load.
-    if (isReady || getDocument().readyState === 'complete') {
+    if (isReady || doc.readyState === 'complete') {
       fn()
     } else {
-      getDocument().addEventListener('DOMContentLoaded', fn)
+      doc.addEventListener('DOMContentLoaded', fn)
     }
   }
 
@@ -5080,7 +5070,7 @@ var htmx = (function() {
       const nonceAttribute = htmx.config.inlineStyleNonce ? ` nonce="${htmx.config.inlineStyleNonce}"` : ''
       const indicator = htmx.config.indicatorClass
       const request = htmx.config.requestClass
-      getDocument().head.insertAdjacentHTML('beforeend',
+      doc.head.insertAdjacentHTML('beforeend',
         `<style${nonceAttribute}>` +
         `.${indicator}{opacity:0;visibility: hidden} ` +
         `.${request} .${indicator}, .${request}.${indicator}{opacity:1;visibility: visible;transition: opacity 200ms ease-in}` +
@@ -5091,7 +5081,7 @@ var htmx = (function() {
 
   function getMetaConfig() {
     /** @type HTMLMetaElement */
-    const element = getDocument().querySelector('meta[name="htmx-config"]')
+    const element = doc.querySelector('meta[name="htmx-config"]')
     if (element) {
       return parseJSON(element.content)
     } else {
@@ -5110,9 +5100,9 @@ var htmx = (function() {
   ready(function() {
     mergeMetaConfig()
     insertIndicatorStyles()
-    let body = getDocument().body
+    let body = docBody
     processNode(body)
-    const restoredElts = getDocument().querySelectorAll(
+    const restoredElts = doc.querySelectorAll(
       "[hx-trigger='restored'],[data-hx-trigger='restored']"
     )
     body.addEventListener('htmx:abort', function(evt) {
@@ -5123,14 +5113,14 @@ var htmx = (function() {
       }
     })
     /** @type {(ev: PopStateEvent) => any} */
-    const originalPopstate = window.onpopstate ? window.onpopstate.bind(window) : null
+    const originalPopstate = win.onpopstate ? win.onpopstate.bind(win) : null
     /** @type {(ev: PopStateEvent) => any} */
-    window.onpopstate = function(event) {
+    win.onpopstate = function(event) {
       if (event.state && event.state.htmx) {
         restoreHistory()
         forEach(restoredElts, function(elt) {
           triggerEvent(elt, 'htmx:restored', {
-            document: getDocument(),
+            document: doc,
             triggerEvent
           })
         })
@@ -5140,7 +5130,7 @@ var htmx = (function() {
         }
       }
     }
-    getWindow().setTimeout(function() {
+    win.setTimeout(function() {
       triggerEvent(body, 'htmx:load', {}) // give ready handlers a chance to load up before firing this event
       body = null // kill reference for gc
     }, 0)
