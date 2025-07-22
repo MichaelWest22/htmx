@@ -1896,8 +1896,7 @@ var htmx = (function() {
       swapOptions = {}
     }
 
-    target = resolveTarget(target)
-    target.classList.add(htmx.config.swappingClass)
+    addClassToElement(target, htmx.config.swappingClass)
 
     // optional transition API promise callbacks
     let settleResolve = null
@@ -1908,6 +1907,7 @@ var htmx = (function() {
     let doSwap = function() {
       maybeCall(swapOptions.beforeSwapCallback)
 
+      target = resolveTarget(target)
       const rootNode = swapOptions.contextElement ? getRootNode(swapOptions.contextElement, false) : getDocument()
 
       // preserve focus and selection
