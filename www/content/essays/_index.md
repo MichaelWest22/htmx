@@ -48,6 +48,7 @@ page_template = "essay.html"
 * [Model/View/Controller](@/essays/mvc.md)
 * [Is Rendering JSON More Efficient Than Rendering HTML?](https://github.com/1cg/html-json-speed-comparison)
 * [Is JSON Smaller Than HTML?](https://github.com/1cg/html-json-size-comparison)
+* [The Secret Life of the Out-of-Band Swap](@/essays/out-of-band.md)
 
 ### Complexity Very, Very Bad
 * [The Grug Brained Developer](https://grugbrain.dev)
