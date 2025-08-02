@@ -1,0 +1,49 @@
+[package]
+name = "htmx-wasm"
+version = "2.0.6"
+edition = "2021"
+description = "A WebAssembly implementation of htmx - high power tools for HTML"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wasm-bindgen = "0.2"
+js-sys = "0.3"
+wasm-bindgen-futures = "0.4"
+serde = { version = "1.0", features = ["derive"] }
+serde-wasm-bindgen = "0.6"
+console_error_panic_hook = "0.1"
+
+[dependencies.web-sys]
+version = "0.3"
+features = [
+  "console",
+  "Document",
+  "Element",
+  "Event",
+  "EventTarget",
+  "HtmlElement",
+  "HtmlFormElement",
+  "HtmlInputElement",
+  "HtmlSelectElement",
+  "HtmlButtonElement",
+  "HtmlAnchorElement",
+  "HtmlTemplateElement",
+  "Node",
+  "NodeList",
+  "Window",
+  "Location",
+  "History",
+  "XmlHttpRequest",
+  "FormData",
+  "CustomEvent",
+  "CustomEventInit",
+  "DomTokenList",
+  "CssStyleDeclaration",
+  "DocumentFragment",
+  "ScrollIntoViewOptions",
+  "ScrollLogicalPosition",
+  "Headers",
+  "Promise",
+]
