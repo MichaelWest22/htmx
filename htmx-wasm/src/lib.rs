@@ -100,17 +100,17 @@ impl Htmx {
     }
 
     fn process_triggers(&self, element: &Element) -> Result<(), JsValue> {
-        if let Some(trigger_attr) = element.get_attribute("hx-trigger") {
+        if let Some(trigger_attr) = element.get_attribute(&"hx-trigger".to_string()) {
             self.trigger_manager.parse_and_bind_triggers(element, &trigger_attr)?;
         }
         Ok(())
     }
 
     fn process_verbs(&self, element: &Element) -> Result<(), JsValue> {
-        let verbs = ["get", "post", "put", "delete", "patch"];
+        let verbs = ["get".to_string(), "post".to_string(), "put".to_string(), "delete".to_string(), "patch".to_string()];
         
         for verb in &verbs {
-            let attr_name = format!("hx-{}", verb);
+            let attr_name = "hx-".to_string() + verb;
             if let Some(path) = element.get_attribute(&attr_name) {
                 self.bind_verb_handler(element, verb, &path)?;
             }
@@ -120,7 +120,7 @@ impl Htmx {
     }
 
     fn process_boost(&self, element: &Element) -> Result<(), JsValue> {
-        if element.get_attribute("hx-boost").as_deref() == Some("true") {
+        if element.get_attribute(&"hx-boost".to_string()).as_deref() == Some(&"true".to_string()) {
             self.boost_element(element)?;
         }
         Ok(())
@@ -136,32 +136,32 @@ impl Htmx {
             ajax_manager.issue_request(&verb_clone, &path_clone, Some(element_clone.clone()));
         }) as Box<dyn FnMut(Event)>);
         
-        element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+        element.add_event_listener_with_callback(&"click".to_string(), closure.as_ref().unchecked_ref())?;
         closure.forget();
         
         Ok(())
     }
 
     fn boost_element(&self, element: &Element) -> Result<(), JsValue> {
-        if element.tag_name() == "A" {
+        if element.tag_name() == "A".to_string() {
             self.boost_anchor(element)?;
-        } else if element.tag_name() == "FORM" {
+        } else if element.tag_name() == "FORM".to_string() {
             self.boost_form(element)?;
         }
         Ok(())
     }
 
     fn boost_anchor(&self, element: &Element) -> Result<(), JsValue> {
-        if let Some(href) = element.get_attribute("href") {
+        if let Some(href) = element.get_attribute(&"href".to_string()) {
             let element_clone = element.clone();
             let ajax_manager = self.ajax_manager.clone();
             
             let closure = Closure::wrap(Box::new(move |event: Event| {
                 event.prevent_default();
-                ajax_manager.issue_request("get", &href, Some(element_clone.clone()));
+                ajax_manager.issue_request(&"get".to_string(), &href, Some(element_clone.clone()));
             }) as Box<dyn FnMut(Event)>);
             
-            element.add_event_listener_with_callback("click", closure.as_ref().unchecked_ref())?;
+            element.add_event_listener_with_callback(&"click".to_string(), closure.as_ref().unchecked_ref())?;
             closure.forget();
         }
         Ok(())
@@ -180,7 +180,7 @@ impl Htmx {
             ajax_manager.issue_request(&method, &action, Some(element_clone.clone()));
         }) as Box<dyn FnMut(Event)>);
         
-        element.add_event_listener_with_callback("submit", closure.as_ref().unchecked_ref())?;
+        element.add_event_listener_with_callback(&"submit".to_string(), closure.as_ref().unchecked_ref())?;
         closure.forget();
         
         Ok(())
@@ -195,7 +195,7 @@ pub fn main() {
     let window = web_sys::window().unwrap();
     let global = js_sys::global();
     
-    js_sys::Reflect::set(&global, &"htmx".into(), &htmx.into()).unwrap();
+    js_sys::Reflect::set(&global, &"htmx".to_string().into(), &htmx.into()).unwrap();
     
     // Process the document when DOM is ready
     let document = window.document().unwrap();
