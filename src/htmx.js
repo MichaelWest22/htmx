@@ -4357,7 +4357,8 @@ var htmx = (function() {
     const xhr = new XMLHttpRequest()
     eltData.xhr = xhr
     eltData.abortable = abortable
-    const endRequestLock = function() {
+    const endRequestLock = function(func) {
+      maybeCall(func)
       eltData.xhr = null
       eltData.abortable = false
       if (eltData.queuedRequests != null &&
@@ -4372,16 +4373,14 @@ var htmx = (function() {
       // prompt returns null if cancelled and empty string if accepted with no entry
       if (promptResponse === null ||
       !triggerEvent(elt, 'htmx:prompt', { prompt: promptResponse, target })) {
-        maybeCall(resolve)
-        endRequestLock()
+        endRequestLock(resolve)
         return promise
       }
     }
 
     if (confirmQuestion && !confirmed) {
       if (!confirm(confirmQuestion)) {
-        maybeCall(resolve)
-        endRequestLock()
+        endRequestLock(resolve)
         return promise
       }
     }
@@ -4446,8 +4445,7 @@ var htmx = (function() {
     }
 
     if (!triggerEvent(elt, 'htmx:configRequest', requestConfig)) {
-      maybeCall(resolve)
-      endRequestLock()
+      endRequestLock(resolve)
       return promise
     }
 
@@ -4461,8 +4459,7 @@ var htmx = (function() {
 
     if (errors && errors.length > 0) {
       triggerEvent(elt, 'htmx:validation:halted', requestConfig)
-      maybeCall(resolve)
-      endRequestLock()
+      endRequestLock(resolve)
       return promise
     }
 
@@ -4489,8 +4486,7 @@ var htmx = (function() {
 
     if (!verifyPath(elt, finalPath, requestConfig)) {
       triggerErrorEvent(elt, 'htmx:invalidPath', requestConfig)
-      maybeCall(reject)
-      endRequestLock()
+      endRequestLock(reject)
       return promise
     }
 
@@ -4564,26 +4560,22 @@ var htmx = (function() {
       removeRequestIndicators(indicators, disableElts)
       triggerErrorEvent(elt, 'htmx:afterRequest', responseInfo)
       triggerErrorEvent(elt, 'htmx:sendError', responseInfo)
-      maybeCall(reject)
-      endRequestLock()
+      endRequestLock(reject)
     }
     xhr.onabort = function() {
       removeRequestIndicators(indicators, disableElts)
       triggerErrorEvent(elt, 'htmx:afterRequest', responseInfo)
       triggerErrorEvent(elt, 'htmx:sendAbort', responseInfo)
-      maybeCall(reject)
-      endRequestLock()
+      endRequestLock(reject)
     }
     xhr.ontimeout = function() {
       removeRequestIndicators(indicators, disableElts)
       triggerErrorEvent(elt, 'htmx:afterRequest', responseInfo)
       triggerErrorEvent(elt, 'htmx:timeout', responseInfo)
-      maybeCall(reject)
-      endRequestLock()
+      endRequestLock(reject)
     }
     if (!triggerEvent(elt, 'htmx:beforeRequest', responseInfo)) {
-      maybeCall(resolve)
-      endRequestLock()
+      endRequestLock(resolve)
       return promise
     }
     var indicators = addRequestIndicatorClasses(elt)
