@@ -4021,7 +4021,7 @@ var htmx = (function() {
     if (context) {
       if (context instanceof Element || typeof context === 'string') {
         return issueAjaxRequest(verb, path, null, null, {
-          targetOverride: resolveTarget(context) || DUMMY_ELT,
+          target: resolveTarget(context) || DUMMY_ELT,
           returnPromise: true
         })
       } else {
@@ -4033,12 +4033,8 @@ var htmx = (function() {
         }
         return issueAjaxRequest(verb, path, resolveTarget(context.source), context.event,
           {
-            handler: context.handler,
-            headers: context.headers,
-            values: context.values,
-            targetOverride: resolvedTarget,
-            swapOverride: context.swap,
-            select: context.select,
+            ...context,
+            target: resolvedTarget,
             returnPromise: true
           })
       }
@@ -4244,7 +4240,7 @@ var htmx = (function() {
       maybeCall(resolve)
       return promise
     }
-    const target = etc.targetOverride || asElement(getTarget(elt))
+    const target = etc.target || asElement(getTarget(elt))
     if (target == null || target == DUMMY_ELT) {
       triggerErrorEvent(elt, 'htmx:targetError', { target: getClosestAttributeValue(elt, 'hx-target') })
       maybeCall(reject)
@@ -4764,7 +4760,7 @@ var htmx = (function() {
     if (responseHandling.target) {
       responseInfo.target = resolveRetarget(elt, responseHandling.target)
     }
-    var swapOverride = etc.swapOverride
+    var swapOverride = etc.swap
     if (swapOverride == null && responseHandling.swapOverride) {
       swapOverride = responseHandling.swapOverride
     }
@@ -5193,8 +5189,8 @@ var htmx = (function() {
  * @property {boolean} [returnPromise]
  * @property {HtmxAjaxHandler} [handler]
  * @property {string} [select]
- * @property {Element} [targetOverride]
- * @property {HtmxSwapStyle} [swapOverride]
+ * @property {Element} [target]
+ * @property {HtmxSwapStyle} [swap]
  * @property {Record<string,string>} [headers]
  * @property {Object|FormData} [values]
  * @property {boolean} [credentials]
