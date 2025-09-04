@@ -1698,17 +1698,12 @@ var htmx = (function() {
     }
     /** @type {Node} */
     let newElt
-    const eltBeforeNewContent = target.previousSibling
     const parentNode = parentElt(target)
     if (!parentNode) { // when parent node disappears, we can't do anything
       return
     }
-    insertNodesBefore(parentNode, target, fragment, settleInfo)
-    if (eltBeforeNewContent == null) {
-      newElt = parentNode.firstChild
-    } else {
-      newElt = eltBeforeNewContent.nextSibling
-    }
+    insertNodesBefore(parentNode, target.nextSibling, fragment, settleInfo)
+    newElt = target.nextSibling
     settleInfo.elts = settleInfo.elts.filter(function(e) { return e !== target })
     // scan through all newly added content and add all elements to the settle info so we trigger
     // events properly on them
@@ -1775,15 +1770,15 @@ var htmx = (function() {
    * @param {HtmxSettleInfo} settleInfo
    */
   function swapInnerHTML(target, fragment, settleInfo) {
-    const firstChild = target.firstChild
-    insertNodesBefore(target, firstChild, fragment, settleInfo)
-    if (firstChild) {
-      while (firstChild.nextSibling) {
-        cleanUpElement(firstChild.nextSibling)
-        target.removeChild(firstChild.nextSibling)
+    const lastChild = target.lastChild
+    insertNodesBefore(target, lastChild ? lastChild.nextSibling : null, fragment, settleInfo)
+    if (lastChild) {
+      while (lastChild.previousSibling) {
+        cleanUpElement(lastChild.previousSibling)
+        target.removeChild(lastChild.previousSibling)
       }
-      cleanUpElement(firstChild)
-      target.removeChild(firstChild)
+      cleanUpElement(lastChild)
+      target.removeChild(lastChild)
     }
   }
 
