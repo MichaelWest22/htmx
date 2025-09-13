@@ -342,12 +342,12 @@ htmx.defineExtension('secure-eval', {
       }
     }
 
-    if (window.location.hostname) {
+    /*if (window.location.hostname) {
       const responseURL = new URL(xhr.responseURL)
       if (responseURL.hostname !== window.location.hostname) {
         serverNonce = null
       }
-    }
+    }*/
 
     if (serverNonce) {
       const pageNonce = getPageLoadNonce()
