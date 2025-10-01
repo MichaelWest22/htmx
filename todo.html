@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>HTMX Todo App</title>
+    <script src="https://unpkg.com/htmx.org@2.0.4"></script>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 50px auto; padding: 20px; }
+        .todo-item { display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #eee; }
+        .todo-item.completed { text-decoration: line-through; opacity: 0.6; }
+        .todo-text { flex: 1; margin: 0 10px; }
+        button { margin-left: 5px; padding: 5px 10px; cursor: pointer; }
+        input[type="text"] { padding: 10px; width: 70%; margin-right: 10px; }
+        .add-form { margin-bottom: 20px; }
+    </style>
+</head>
+<body>
+    <h1>Todo App</h1>
+    
+    <div class="add-form">
+        <form hx-post="/add-todo" hx-target="#todo-list" hx-swap="beforeend">
+            <input type="text" name="text" placeholder="Add new todo..." required>
+            <button type="submit">Add</button>
+        </form>
+    </div>
+
+    <div id="todo-list">
+        <!-- Todos will be loaded here -->
+    </div>
+
+    <script>
+        // Simple in-memory storage for demo
+        let todos = [];
+        let nextId = 1;
+
+        // Mock server responses
+        htmx.on('htmx:configRequest', function(evt) {
+            if (evt.detail.path === '/add-todo') {
+                evt.preventDefault();
+                const formData = new FormData(evt.detail.elt);
+                const text = formData.get('text');
+                
+                const todo = { id: nextId++, text, completed: false };
+                todos.push(todo);
+                
+                // Create todo HTML
+                const todoHtml = `
+                    <div class="todo-item" id="todo-${todo.id}">
+                        <input type="checkbox" hx-put="/toggle-todo/${todo.id}" hx-target="#todo-${todo.id}" hx-swap="outerHTML">
+                        <span class="todo-text">${todo.text}</span>
+                        <button hx-delete="/delete-todo/${todo.id}" hx-target="#todo-${todo.id}" hx-swap="outerHTML">Delete</button>
+                    </div>
+                `;
+                
+                // Simulate server response
+                setTimeout(() => {
+                    document.getElementById('todo-list').insertAdjacentHTML('beforeend', todoHtml);
+                    evt.detail.elt.reset();
+                }, 100);
+            }
+            
+            else if (evt.detail.path.startsWith('/toggle-todo/')) {
+                evt.preventDefault();
+                const id = parseInt(evt.detail.path.split('/')[2]);
+                const todo = todos.find(t => t.id === id);
+                
+                if (todo) {
+                    todo.completed = !todo.completed;
+                    const todoHtml = `
+                        <div class="todo-item ${todo.completed ? 'completed' : ''}" id="todo-${todo.id}">
+                            <input type="checkbox" ${todo.completed ? 'checked' : ''} hx-put="/toggle-todo/${todo.id}" hx-target="#todo-${todo.id}" hx-swap="outerHTML">
+                            <span class="todo-text">${todo.text}</span>
+                            <button hx-delete="/delete-todo/${todo.id}" hx-target="#todo-${todo.id}" hx-swap="outerHTML">Delete</button>
+                        </div>
+                    `;
+                    
+                    setTimeout(() => {
+                        document.getElementById(`todo-${id}`).outerHTML = todoHtml;
+                    }, 100);
+                }
+            }
+            
+            else if (evt.detail.path.startsWith('/delete-todo/')) {
+                evt.preventDefault();
+                const id = parseInt(evt.detail.path.split('/')[2]);
+                todos = todos.filter(t => t.id !== id);
+                
+                setTimeout(() => {
+                    const element = document.getElementById(`todo-${id}`);
+                    if (element) element.remove();
+                }, 100);
+            }
+        });
+    </script>
+</body>
+</html>

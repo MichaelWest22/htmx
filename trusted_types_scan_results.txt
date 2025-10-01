@@ -1,0 +1,106 @@
+================================================================================
+TRUSTED TYPES UNSAFE ENDPOINTS SCAN REPORT
+================================================================================
+Total findings: 5
+
+
+HIGH SEVERITY (4 findings)
+--------------------------------------------------
+
+📍 secure-eval.js:19:44
+   Pattern: Function_constructor
+   Description: Function constructor - requires TrustedScript
+   Trusted Type Required: TrustedScript
+   Matched: function(
+   Line: const wrappedCode = `window.${funcVar} = function(${paramName || ''}) { ${code} }`
+   ⚠️  Likely user-controlled input detected
+
+   Context:
+     16: 
+     17:   const funcVar = 'htmx_eval_func_' + (++evalCounter)
+     18: 
+     19:   const wrappedCode = `window.${funcVar} = function(${paramName || ''}) { ${code} }`
+     20: 
+     21:   script.textContent = wrappedCode
+     22:   document.head.appendChild(script)
+
+
+📍 secure-eval.js:100:9
+   Pattern: Function_constructor
+   Description: Function constructor - requires TrustedScript
+   Trusted Type Required: TrustedScript
+   Matched: function(
+   Line: init: function(apiRef) {
+   ⚠️  Likely user-controlled input detected
+
+   Context:
+     97: }
+     98: 
+     99: htmx.defineExtension('secure-eval', {
+    100:   init: function(apiRef) {
+    101:     apiRef.maybeEval = secureEval
+    102:   },
+    103: 
+
+
+📍 secure-eval.js:104:22
+   Pattern: Function_constructor
+   Description: Function constructor - requires TrustedScript
+   Trusted Type Required: TrustedScript
+   Matched: function(
+   Line: transformResponse: function(text, xhr, elt) {
+   ⚠️  Likely user-controlled input detected
+
+   Context:
+    101:     apiRef.maybeEval = secureEval
+    102:   },
+    103: 
+    104:   transformResponse: function(text, xhr, elt) {
+    105:     htmx.config.refreshOnHistoryMiss = true
+    106: 
+    107:     let serverNonce = xhr.getResponseHeader('HX-Nonce')
+
+
+📍 secure-eval.js:142:12
+   Pattern: Function_constructor
+   Description: Function constructor - requires TrustedScript
+   Trusted Type Required: TrustedScript
+   Matched: function(
+   Line: onEvent: function(name, evt) {
+   ✅ Sanitization detected in context
+
+   Context:
+    139:     return text.replace(/ignore:secure-eval/g, '')
+    140:   },
+    141: 
+    142:   onEvent: function(name, evt) {
+    143:     if (name === 'htmx:load') {
+    144:       validatePageLoadNonces(evt.detail.elt)
+    145:       validateScriptTags(evt.detail.elt)
+
+
+LOW SEVERITY (1 findings)
+--------------------------------------------------
+
+📍 secure-eval.js:21:9
+   Pattern: textContent
+   Description: textContent assignment - generally safe but flagged for review
+   Trusted Type Required: None (safe)
+   Matched: .textContent =
+   Line: script.textContent = wrappedCode
+   ⚠️  Likely user-controlled input detected
+
+   Context:
+     18: 
+     19:   const wrappedCode = `window.${funcVar} = function(${paramName || ''}) { ${code} }`
+     20: 
+     21:   script.textContent = wrappedCode
+     22:   document.head.appendChild(script)
+     23: 
+     24:   const result = window[funcVar].call(thisArg, param)
+
+
+SUMMARY BY PATTERN
+------------------------------
+Function_constructor: 4
+textContent: 1

@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Anchor Scrolling</title>
+    <script src="https://unpkg.com/htmx.org@2.0.7/dist/htmx.js"></script>
+    <script src="https://unpkg.com/sinon@15.2.0/pkg/sinon.js"></script>
+</head>
+<body>
+    <div style="height: 1000px; background: linear-gradient(to bottom, red, blue);">
+        <h1>Top of page</h1>
+        <p>Scroll down to see the target...</p>
+    </div>
+    
+    <div id="target" style="height: 500px; background: yellow; padding: 20px;">
+        <h2>Target Section</h2>
+        <p>This is the target that should be scrolled to.</p>
+    </div>
+    
+    <div style="height: 1000px; background: linear-gradient(to bottom, green, purple);">
+        <p>More content below...</p>
+    </div>
+
+    <button onclick="testHxLocation()">Test HX-Location header</button>
+
+    <script>
+        function testHxLocation() {
+            // Mock server response with HX-Location header
+            const server = sinon.createFakeServer();
+            server.autoRespond = true;
+            const currentPath = window.location.pathname + window.location.search;
+            const currentHTML = document.documentElement.outerHTML;
+            
+            // Mock the initial request that returns HX-Location
+            server.respondWith('GET', '/test-endpoint', function(xhr) {
+                xhr.respond(200, {
+                    'HX-Location': '/redirect-target#target',
+                    'Content-Type': 'text/html'
+                }, '');
+            });
+            
+            // Mock the follow-up request to the redirect target
+            server.respondWith('GET', /\/redirect-target/, function(xhr) {
+                xhr.respond(200, {
+                    'Content-Type': 'text/html'
+                }, currentHTML);
+            });
+            
+            htmx.ajax('GET', '/test-endpoint', {
+                target: 'body'
+            });
+            
+            setTimeout(() => server.restore(), 500);
+        }
+    </script>
+</body>
+</html>
