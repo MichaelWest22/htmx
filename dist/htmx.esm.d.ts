@@ -146,7 +146,7 @@ export type HtmxExtension = {
     encodeParameters: (xhr: XMLHttpRequest, parameters: FormData, elt: Node) => any | string | null;
     getSelectors: () => string[] | null;
 };
-declare namespace htmx {
+interface HTMX {
     let onLoad: (callback: (elt: Node) => void) => EventListener;
     let process: (elt: Element | string) => void;
     let on: (arg1: EventTarget | string, arg2: string | EventListener, arg3?: EventListener | any | boolean, arg4?: any | boolean) => EventListener;
@@ -211,3 +211,4 @@ declare namespace htmx {
     let _: (str: string) => any;
     let version: string;
 }
+declare const htmx: HTMX;
