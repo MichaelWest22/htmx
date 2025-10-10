@@ -658,4 +658,15 @@ describe('Core htmx API test', function() {
     var div = make('<div>textNode</div>')
     htmx.process(div.firstChild)
   })
+
+  it('initialize api exists', function() {
+    htmx.initialize.should.be.a('function')
+  })
+
+  it('initialize api is idempotent', function() {
+    // Call initialize multiple times - should not throw or cause issues
+    htmx.initialize()
+    htmx.initialize()
+    htmx.initialize()
+  })
 })

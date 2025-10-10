@@ -273,6 +273,19 @@ Log no htmx events, call this to turn off the debugger if you previously enabled
     htmx.logNone();
 ```
 
+### Method - `htmx.initialize()` {#initialize}
+
+Initializes htmx. This is called automatically when the DOM is ready, but can be called manually to initialize htmx before `DOMContentLoaded` fires. This is useful when loading htmx asynchronously or when you need to initialize htmx early for streaming responses.
+
+Safe to call multiple times - will only initialize once.
+
+##### Example
+
+```js
+    // manually initialize htmx before DOMContentLoaded
+    htmx.initialize();
+```
+
 ### Property - `htmx.logger` {#logger}
 
 The logger htmx uses to log with

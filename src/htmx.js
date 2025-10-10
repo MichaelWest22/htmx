@@ -60,6 +60,8 @@ var htmx = (function() {
     logAll: null,
     /** @type {typeof logNone} */
     logNone: null,
+    /** @type {typeof initialize} */
+    initialize: null,
     /* Debugging */
     /**
      * The logger htmx uses to log with
@@ -318,6 +320,7 @@ var htmx = (function() {
   htmx.removeExtension = removeExtension
   htmx.logAll = logAll
   htmx.logNone = logNone
+  htmx.initialize = initialize
   htmx.parseInterval = parseInterval
   htmx._ = internalEval
 
@@ -5108,8 +5111,15 @@ var htmx = (function() {
     }
   }
 
-  // initialize the document
-  ready(function() {
+  /**
+   * Initializes htmx. Can be called manually to initialize htmx before DOMContentLoaded.
+   * Safe to call multiple times - will only initialize once.
+   *
+   * @see https://htmx.org/api/#initialize
+   */
+  function initialize() {
+    if (initialize.done) return
+    initialize.done = true
     mergeMetaConfig()
     insertIndicatorStyles()
     let body = getDocument().body
@@ -5146,7 +5156,10 @@ var htmx = (function() {
       triggerEvent(body, 'htmx:load', {}) // give ready handlers a chance to load up before firing this event
       body = null // kill reference for gc
     }, 0)
-  })
+  }
+
+  // initialize the document
+  ready(initialize)
 
   return htmx
 })()

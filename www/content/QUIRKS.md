@@ -187,6 +187,8 @@ Therefore, although htmx can be loaded asynchronously, do so at your own risk.
 Keep in mind, also, that if your DOM content loads before htmx does, all the htmx-provided functionality will be nonfunctional until htmx loads.
 [Prefetching](https://developer.mozilla.org/en-US/docs/Web/HTML/Reference/Attributes/rel/prefetch) (or even "regular" fetching) htmx before you need it is one possible way to resolve this problem.
 
+If you must load htmx asynchronously, you can manually call [`htmx.initialize()`](@/api.md#initialize) after the script loads to ensure htmx is initialized before `DOMContentLoaded` fires. This can be useful for streaming responses or when you need early initialization.
+
 ## The JavaScript API Is Not A Focus
 
 htmx is a hypermedia-oriented front end library.  This means that htmx enhances HTML via
