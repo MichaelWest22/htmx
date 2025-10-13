@@ -2703,10 +2703,10 @@ var htmx = (function() {
       observer.observe(asElement(elt))
       addEventListener(asElement(elt), handler, nodeData, triggerSpec)
     } else if (!nodeData.firstInitCompleted && triggerSpec.trigger === 'load') {
-      triggerSpec.once = true
+      triggerSpec.trigger = 'htmx:trigger:load'
       addEventListener(elt, handler, nodeData, triggerSpec)
-      // dispatch a custom non bubbling load event to just trigger the load
-      elt.dispatchEvent(new CustomEvent('load', { detail: { elt } }))
+      // dispatch a custom non bubbling load event to just trigger the load once
+      elt.dispatchEvent(new CustomEvent('htmx:trigger:load', { detail: { elt } }))
     } else if (triggerSpec.pollInterval > 0) {
       nodeData.polling = true
       processPolling(asElement(elt), handler, triggerSpec)
