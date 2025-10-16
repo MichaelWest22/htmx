@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Server Commands Extension Test (Mocked)</title>
+  <script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.js" integrity="sha384-yWakaGAFicqusuwOYEmoRjLNOC+6OFsdmwC2lbGQaRELtuVEqNzt11c2J711DeCZ" crossorigin="anonymous"></script>
+  <script src="https://cdn.jsdelivr.net/npm/sinon@18/pkg/sinon.js"></script>
+  <style>
+    body { 
+      font-family: system-ui, -apple-system, sans-serif; 
+      padding: 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    h1 { 
+      color: white; 
+      text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+      margin-bottom: 30px;
+    }
+    button { 
+      margin: 5px; 
+      padding: 12px 20px; 
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: transform 0.2s, box-shadow 0.2s;
+      box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+    }
+    button:hover { 
+      transform: translateY(-2px);
+      box-shadow: 0 6px 12px rgba(0,0,0,0.2);
+    }
+    button:active { 
+      transform: translateY(0);
+    }
+    #result { 
+      border: 2px solid #667eea;
+      padding: 15px; 
+      margin: 10px 0; 
+      min-height: 50px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    #log { 
+      border: 2px solid #764ba2;
+      padding: 15px; 
+      margin: 10px 0; 
+      background: #f8f9fa;
+      max-height: 200px; 
+      overflow-y: auto;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      font-family: 'Courier New', monospace;
+      font-size: 0.9em;
+    }
+    #log div {
+      padding: 4px 0;
+      border-bottom: 1px solid #e9ecef;
+    }
+    .test-section { 
+      margin: 20px 0; 
+      padding: 20px; 
+      background: white;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+    .test-section h2 {
+      color: #667eea;
+      margin-top: 0;
+    }
+    #timing-result { 
+      border: 2px solid #667eea;
+      padding: 15px; 
+      margin: 10px 0;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .note {
+      background: #fff3cd;
+      border: 1px solid #ffc107;
+      padding: 10px;
+      border-radius: 6px;
+      margin-top: 10px;
+      font-size: 0.9em;
+    }
+  </style>
+</head>
+<body hx-ext="server-commands">
+  <h1>🚀 Server Commands Extension Test (Mocked)</h1>
+  
+  <div id="log"></div>
+
+  <div class="test-section">
+    <h2>🎯 Target + Swap</h2>
+    <button hx-get="/swap" hx-swap="none">✨ Test Swap</button>
+    <div id="result">Original content</div>
+  </div>
+
+  <div class="test-section">
+    <h2>⚡ Trigger</h2>
+    <button hx-get="/trigger" hx-swap="none">🔔 Test Trigger</button>
+  </div>
+
+  <div class="test-section">
+    <h2>⏱️ Trigger After Swap/Settle</h2>
+    <button hx-get="/trigger-timing" hx-swap="none">🎬 Test Trigger Timing</button>
+    <div id="timing-result">⏳ Waiting...</div>
+  </div>
+
+  <div class="test-section">
+    <h2>📌 Push URL</h2>
+    <button hx-get="/push-url" hx-swap="none">➡️ Test Push URL</button>
+  </div>
+
+  <div class="test-section">
+    <h2>🔄 Replace URL</h2>
+    <button hx-get="/replace-url" hx-swap="none">🔀 Test Replace URL</button>
+  </div>
+
+  <div class="test-section">
+    <h2>🌐 Location</h2>
+    <button hx-get="/location-json" hx-swap="none">🔁 Test Location (replaces body)</button>
+    <button hx-get="/location-json-target" hx-swap="none">🎯 Test Location (targets #result)</button>
+    <div class="note">⚠️ Note: After testing body replacement, use browser refresh instead of back button due to htmx history caching in this test environment.</div>
+  </div>
+
+  <script>
+/*
+  Server Commands Extension (<htmx> tags)
+  ======================================================
+  This extension enables out-of-band swaps on steroids using custom <htmx> elements in a server response.
+  It lets you send commands for swapping content, triggering events, and managing browser history.
+  It is inspired by Rails' <turbo-stream>, data-star, and is compatible with the sse & websockets extensions out of the box.
+*/
+(function() {
+  /** @type {import("../htmx").HtmxInternalApi} */
+  let api
+
+  // <htmx> tag valid attributes
+  const ATTRIBUTES = new Set([
+    'target',
+    'swap',
+    'select',
+    'redirect',
+    'refresh',
+    'location',
+    'push-url',
+    'replace-url',
+    'trigger',
+    'trigger-after-swap',
+    'trigger-after-settle'
+  ])
+
+  const HISTORY_MARKER = 'htmx-server-commands-history-only'
+
+  htmx.defineExtension('server-commands', {
+    /** @param {import("../htmx").HtmxInternalApi} apiRef */
+    init: function(apiRef) {
+      api = apiRef
+    },
+
+    /**
+     * Intercepts htmx events to handle fake header requests.
+     * @param {string} name - The event name
+     * @param {Event} evt - The event object
+     */
+    onEvent: function(name, evt) {
+      if (name === 'htmx:beforeRequest' && evt.detail.pathInfo?.requestPath.startsWith(HISTORY_MARKER)) {
+        const url = new URL(evt.detail.pathInfo?.requestPath, window.location.origin)
+        const headerName = url.searchParams.get('header')
+        const headerValue = url.searchParams.get('value')
+
+        evt.detail.xhr.getResponseHeader = function(header) {
+          return header.toLowerCase() === headerName.toLowerCase() ? headerValue : null
+        }
+        evt.detail.xhr.getAllResponseHeaders = function() {
+          return headerName + ': ' + headerValue
+        }
+        Object.defineProperty(evt.detail.xhr, 'status', { value: 200, writable: false })
+        evt.detail.keepIndicators = true // prevent indicator cleanup when indicators will not be generated
+        evt.detail.xhr.onload()
+        return false
+      }
+    },
+
+    /**
+     * @param {string} text
+     * @param {XMLHttpRequest} xhr
+     * @param {Element} elt - The element that triggered the request (with hx-get/hx-post/etc. or sse-connect)
+     */
+    transformResponse: function(text, xhr, elt) {
+      const triggeringElement = elt
+
+      // Check if empty text, or no <htmx> tags
+      const fragment = text ? api.makeFragment(text) : null
+      if (!fragment || !fragment.querySelector('htmx')) {
+        return text // Return early
+      }
+
+      // Find all <htmx> tags
+      const commandElements = fragment.querySelectorAll('htmx')
+
+      // Keep only top-level ones (direct children of the fragment)
+      const topLevelCommandElements = Array.from(commandElements).filter(el => {
+        // Check if this htmx element is a direct child of the fragment
+        return el.parentNode === fragment
+      })
+
+      if (commandElements.length > topLevelCommandElements.length) {
+        console.warn(
+          '[server-commands] Nested <htmx> tags are not supported and will be discarded.'
+        )
+      }
+
+      // Process ONLY the top-level <htmx> tags in order
+      for (const commandElement of topLevelCommandElements) {
+        processCommandElement(commandElement, triggeringElement)
+      }
+
+      // Remove all <htmx> tags from the fragment
+      commandElements.forEach(el => el.remove())
+
+      // Serialize remaining nodes into an HTML string
+      const container = document.createElement('div')
+      container.appendChild(fragment)
+
+      return container.innerHTML
+    }
+  })
+
+  /**
+   * Processes a single <htmx> element by reading its attributes and executing
+   * actions in a fixed, sequential order.
+   * @param {HTMLElement} commandElement - The <htmx> element to process
+   * @param {Element} triggeringElement - The element that triggered the request (e.g. with hx-get/hx-post/etc. or sse-connect)
+   */
+  function processCommandElement(commandElement, triggeringElement) {
+    try {
+      // Fire cancelable event
+      if (api.triggerEvent(triggeringElement, 'htmx:beforeServerCommand', { commandElement }) === false) return
+
+      validateCommandElement(commandElement)
+
+      const swapStyle = api.getAttributeValue(commandElement, 'swap') || 'outerHTML'
+      const select = api.getAttributeValue(commandElement, 'select')
+      const targetSelector = api.getAttributeValue(commandElement, 'target')
+
+      let targetElement = null
+      let swapContent = null
+
+      if (targetSelector) {
+        targetElement = htmx.find(targetSelector)
+        if (targetElement) {
+          swapContent = commandElement.innerHTML
+        } else {
+          const error = new Error(`[server-commands] Target selector "${targetSelector}" did not match any elements.`)
+          api.triggerErrorEvent(triggeringElement, 'htmx:targetError', { error, target: targetSelector })
+        }
+      }
+
+      if (api.hasAttribute(commandElement, 'trigger')) {
+        fakeHeaderRequest('HX-Trigger', api.getAttributeValue(commandElement, 'trigger'))
+      }
+      if (api.hasAttribute(commandElement, 'location')) {
+        fakeHeaderRequest('HX-Location', api.getAttributeValue(commandElement, 'location'))
+      }
+      if (api.hasAttribute(commandElement, 'redirect')) {
+        window.location.href = api.getAttributeValue(commandElement, 'redirect')
+        return // Stop processing
+      }
+      if (api.hasAttribute(commandElement, 'refresh') && api.getAttributeValue(commandElement, 'refresh') !== 'false') {
+        window.location.reload()
+        return // Stop processing
+      }
+
+      if (api.hasAttribute(commandElement, 'push-url')) {
+        fakeHeaderRequest('HX-Push-Url', api.getAttributeValue(commandElement, 'push-url'))
+      }
+      if (api.hasAttribute(commandElement, 'replace-url')) {
+        fakeHeaderRequest('HX-Replace-Url', api.getAttributeValue(commandElement, 'replace-url'))
+      }
+
+      // Process swap if target was found
+      if (targetElement && swapContent !== null) {
+        const swapSpec = api.getSwapSpecification(triggeringElement, swapStyle)
+
+        const beforeSwapDetails = {
+          elt: triggeringElement,
+          target: targetElement,
+          swapSpec,
+          serverResponse: swapContent,
+          shouldSwap: true,
+          fromServerCommand: true
+        }
+
+        // Fire cancelable event
+        if (api.triggerEvent(targetElement, 'htmx:beforeSwap', beforeSwapDetails) !== false) {
+          if (beforeSwapDetails.shouldSwap) {
+            api.swap(
+              beforeSwapDetails.target,
+              beforeSwapDetails.serverResponse,
+              beforeSwapDetails.swapSpec,
+              {
+                select,
+                eventInfo: { elt: triggeringElement },
+                contextElement: triggeringElement,
+                afterSwapCallback: api.hasAttribute(commandElement, 'trigger-after-swap')
+                  ? () => fakeHeaderRequest('HX-Trigger', api.getAttributeValue(commandElement, 'trigger-after-swap'))
+                  : undefined,
+                afterSettleCallback: api.hasAttribute(commandElement, 'trigger-after-settle')
+                  ? () => fakeHeaderRequest('HX-Trigger', api.getAttributeValue(commandElement, 'trigger-after-settle'))
+                  : undefined
+              }
+            )
+          }
+        }
+      }
+
+      api.triggerEvent(triggeringElement, 'htmx:afterServerCommand', { commandElement })
+    } catch (error) {
+      // Fire the public event for programmatic listeners.
+      api.triggerErrorEvent(
+        document.body, 'htmx:serverCommandError', { error, commandElement }
+      )
+    }
+  }
+
+  /**
+   * Validate <htmx> element & throw an error for unknown attributes or invalid combinations.
+   * @param {HTMLElement} element
+   * @throws {Error} If validation fails
+   */
+  function validateCommandElement(element) {
+    const errors = []
+
+    const hasCommandAttribute = Array.from(element.attributes).some(attr => ATTRIBUTES.has(attr.name))
+    if (!hasCommandAttribute) {
+      const elementHTML = element.outerHTML.replace(/\s*\n\s*/g, ' ').trim()
+      throw new Error(`[server-commands] The following <htmx> tag has no command attributes:\n\n  ${elementHTML}\n`)
+    }
+
+    // Check unknown attributes
+    for (const attr of element.attributes) {
+      if (!ATTRIBUTES.has(attr.name)) {
+        errors.push(
+          `Invalid attribute '${attr.name}'. Valid attributes are: ${[...ATTRIBUTES].join(', ')}`
+        )
+      }
+    }
+
+    // Check invalid combinations
+    const hasSwapOrSelect = api.hasAttribute(element, 'swap') || api.hasAttribute(element, 'select')
+    const hasTarget = api.hasAttribute(element, 'target')
+    if (hasSwapOrSelect && !hasTarget) {
+      errors.push(
+        `A command with 'swap' or 'select' performs a swap and requires a target. Specify the target using the 'target' attribute: <htmx target="#my-div">...</htmx>`
+      )
+    }
+
+    // If errors were found, throw an error with details
+    if (errors.length > 0) {
+      const elementHTML = element.outerHTML.replace(/\s*\n\s*/g, ' ').trim()
+      const errorIntro = `[server-commands] ${errors.length} validation error(s) for command:`
+      const errorDetails = errors.map(e => `  - ${e}`).join('\n')
+
+      throw new Error(`${errorIntro}\n\n  ${elementHTML}\n\n${errorDetails}\n`)
+    }
+  }
+
+  /**
+   * Triggers a fake AJAX request to inject response headers into htmx's processing pipeline.
+   * @param {string} header - The response header name (e.g., 'HX-Trigger', 'HX-Push-Url')
+   * @param {string} value - The response header value
+   */
+  function fakeHeaderRequest(header, value) {
+    htmx.ajax('get', HISTORY_MARKER + '?header=' + header + '&value=' + encodeURIComponent(value), { swap: 'none' })
+  }
+})()
+  </script>
+
+  <script>
+    // Setup Sinon fake server
+    const server = sinon.fakeServer.create({ respondImmediately: true });
+
+    // Mock responses
+    server.respondWith('GET', '/swap', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx target="#result"><div>Content swapped!</div></htmx>']);
+
+    server.respondWith('GET', '/trigger', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx trigger=\'{"testEvent": {"message": "Hello from server!"}}\'></htmx>']);
+
+    server.respondWith('GET', '/trigger-timing', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx target="#timing-result" trigger-after-swap="afterSwapEvent" trigger-after-settle="afterSettleEvent"><div>Timing test complete</div></htmx>']);
+
+    server.respondWith('GET', '/push-url', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx push-url="/new-url"></htmx>']);
+
+    server.respondWith('GET', '/replace-url', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx replace-url="/replaced-url"></htmx>']);
+
+    server.respondWith('GET', '/location', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx location="/target-page"></htmx>']);
+
+    server.respondWith('GET', '/location-json', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx location=\'{"path": "/target-page", "target": "body"}\'></htmx>']);
+
+    server.respondWith('GET', '/location-json-target', [200, { 'Content-Type': 'text/html' }, 
+      '<htmx location=\'{"path": "/target-page-result", "target": "#result"}\'></htmx>']);
+
+    server.respondWith('GET', '/target-page', [200, { 'Content-Type': 'text/html' }, 
+      '<h1>New Page Loaded!</h1><p>This replaced the entire body via HX-Location</p>']);
+
+    server.respondWith('GET', '/target-page-result', [200, { 'Content-Type': 'text/html' }, 
+      '<div>Target page content loaded into #result via HX-Location!</div>']);
+
+    // Log events
+    document.body.addEventListener('testEvent', (e) => {
+      log('Event: testEvent - ' + JSON.stringify(e.detail));
+    });
+    document.body.addEventListener('afterSwapEvent', (e) => {
+      log('Event: afterSwapEvent');
+    });
+    document.body.addEventListener('afterSettleEvent', (e) => {
+      log('Event: afterSettleEvent');
+    });
+
+    function log(msg) {
+      const logDiv = document.getElementById('log');
+      const entry = document.createElement('div');
+      entry.textContent = new Date().toLocaleTimeString() + ' - ' + msg;
+      logDiv.insertBefore(entry, logDiv.firstChild);
+    }
+  </script>
+</body>
+</html>
