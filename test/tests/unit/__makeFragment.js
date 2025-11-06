@@ -29,9 +29,10 @@ describe('__makeFragment unit tests', function() {
     })
 
     it('converts partial tags to template', function () {
-        let {fragment} = htmx.__makeFragment('<partial hx-target="#foo">Content</partial>');
+        let {fragment} = htmx.__makeFragment('<htmx-partial hx-target="#foo">Content</htmx-partial>');
         fragment.children[0].tagName.should.equal('TEMPLATE');
-        fragment.children[0].hasAttribute('partial').should.be.true;
+        fragment.children[0].hasAttribute('htmx').should.be.true;
+        fragment.children[0].getAttribute('type').should.equal('partial');
     })
 
     it('strips head content', function () {

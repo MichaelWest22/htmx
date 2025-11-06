@@ -1076,7 +1076,8 @@ var htmx = (() => {
         }
 
         __makeFragment(text) {
-            let response = text.replace(/<partial(\s+|>)/gi, '<template partial$1').replace(/<\/partial>/gi, '</template>');
+            let response = text.replace(/<htmx-([a-z]+)([\s>])/gi, '<template htmx type="$1"$2').replace(/<\/htmx-[a-z]+>/gi, '</template>');
+            // TODO - store any head tag content on the fragment for head extension
             let title = '';
             response = response.replace(/<title[^>]*>([\s\S]*?)<\/title>/i, (m, t) => (title = t, ''));
             let responseWithNoHead = response.replace(/<head(\s[^>]*)?>[\s\S]*?<\/head>/i, '');
@@ -1130,17 +1131,17 @@ var htmx = (() => {
             });
         }
 
-        __processOOB(fragment, sourceElement, selectOOB) {
+        __processOOB(ctx, fragment) {
             let tasks = [];
 
             // Process hx-select-oob first (select elements from response)
-            if (selectOOB) {
-                for (let spec of selectOOB.split(',')) {
+            if (ctx.selectOOB) {
+                for (let spec of ctx.selectOOB.split(',')) {
                     let [selector, ...rest] = spec.split(':');
                     let oobValue = rest.length ? rest.join(':') : 'true';
 
                     for (let elt of fragment.querySelectorAll(selector)) {
-                        this.__createOOBTask(tasks, elt, oobValue, sourceElement);
+                        this.__createOOBTask(tasks, elt, oobValue, ctx.sourceElement);
                     }
                 }
             }
@@ -1149,7 +1150,7 @@ var htmx = (() => {
             for (let oobElt of fragment.querySelectorAll(`[${this.__prefix('hx-swap-oob')}]`)) {
                 let oobValue = oobElt.getAttribute(this.__prefix('hx-swap-oob'));
                 oobElt.removeAttribute(this.__prefix('hx-swap-oob'));
-                this.__createOOBTask(tasks, oobElt, oobValue, sourceElement);
+                this.__createOOBTask(tasks, oobElt, oobValue, ctx.sourceElement);
             }
 
             return tasks;
@@ -1196,20 +1197,30 @@ var htmx = (() => {
             return config;
         }
 
-        __processPartials(fragment, sourceElement) {
+        __processPartials(ctx, fragment) {
+            let { sourceElement } = ctx;
             let tasks = [];
 
-            for (let partialElt of fragment.querySelectorAll('template[partial]')) {
-                let swapSpec = this.__parseSwapSpec(partialElt.getAttribute(this.__prefix('hx-swap')) || this.config.defaultSwap);
-
-                tasks.push({
-                    type: 'partial',
-                    fragment: partialElt.content.cloneNode(true),
-                    target: partialElt.getAttribute(this.__prefix('hx-target')),
-                    swapSpec,
-                    sourceElement
-                });
-                partialElt.remove();
+            for (let htmxElt of fragment.querySelectorAll('template[htmx]')) {
+                let type = htmxElt.getAttribute('type');
+                if (type === 'partial') {
+                    let swapSpec = this.__parseSwapSpec(htmxElt.getAttribute(this.__prefix('hx-swap')) || this.config.defaultSwap);
+                    tasks.push({
+                        type: 'partial',
+                        fragment: htmxElt.content.cloneNode(true),
+                        target: htmxElt.getAttribute(this.__prefix('hx-target')),
+                        swapSpec,
+                        sourceElement
+                    });
+                } else if (type) {
+                    this.__triggerExtensions(htmxElt, `htmx:process:${type}`, {
+                        ctx,
+                        fragment,
+                        sourceElement,
+                        tasks
+                    });
+                }
+                htmxElt.remove();
             }
 
             return tasks;
@@ -1252,8 +1263,8 @@ var htmx = (() => {
             let tasks = [];
 
             // Process OOB and partials
-            let oobTasks = this.__processOOB(fragment, ctx.sourceElement, ctx.selectOOB);
-            let partialTasks = this.__processPartials(fragment, ctx.sourceElement);
+            let oobTasks = this.__processOOB(ctx, fragment);
+            let partialTasks = this.__processPartials(ctx, fragment);
             tasks.push(...oobTasks, ...partialTasks);
 
             // Process main swap

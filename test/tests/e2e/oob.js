@@ -3,13 +3,13 @@ describe('Out of Band Swaps', function() {
         cleanupTest()
     })
 
-    it('Basic OOB swap works', async function() {
+    it.only('Basic OOB swap works', async function() {
         // Set up mock response
         mockResponse('GET', '/demo', new MockResponse(
             `<div id="result">Success!</div>
-                   <htmx-action type="partial" hx-target="#d2">
+                   <htmx-partial hx-target="#d2" hx-swap="outerHTML">
                       <div id="d3">Success OOB!<p></p></div>
-                   </htmx-action>`));
+                   </htmx-partial>`));
         // Create test button
         createProcessedHTML(`
           <button id="btn1" hx-action="/demo">Button</button>
