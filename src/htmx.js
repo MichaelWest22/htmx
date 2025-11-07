@@ -378,6 +378,11 @@ var htmx = (() => {
             if (this.__isBoosted(elt)) {
                 headers["HX-Boosted"] = "true"
             }
+            // Add ETag support for polling
+            if (elt._htmx?.etag) {
+                headers["If-None-Match"] = elt._htmx.etag;
+                headers["Cache-Control"] = "no-store";
+            }
             let {val: headersAttribute} = this.__attributeValue(elt, "hx-headers") || {};
             if (headersAttribute) {
                 Object.assign(headers, JSON.parse(headersAttribute));
@@ -516,6 +521,19 @@ var htmx = (() => {
                     await this.__handleSSE(ctx, elt, response);
                 } else {
                     // HTTP response
+                    // Store ETag for future requests
+                    let etag = response.headers.get("ETag");
+                    if (etag) {
+                        elt._htmx = elt._htmx || {};
+                        elt._htmx.etag = etag;
+                    }
+                    
+                    // Handle 304 Not Modified - skip swap
+                    if (response.status === 304) {
+                        ctx.status = "not modified";
+                        return;
+                    }
+                    
                     ctx.text = await response.text();
                     if (ctx.status === "issuing") {
                         if (ctx.hx.retarget) ctx.target = this.__resolveTarget(elt, ctx.hx.retarget);
