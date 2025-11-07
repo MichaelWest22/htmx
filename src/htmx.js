@@ -1203,7 +1203,13 @@ var htmx = (() => {
 
             for (let htmxElt of fragment.querySelectorAll('template[htmx]')) {
                 let type = htmxElt.getAttribute('type');
-                if (type === 'partial') {
+                let handled = this.__triggerExtensions(htmxElt, `htmx:process:${type}`, {
+                    ctx,
+                    fragment,
+                    sourceElement,
+                    tasks
+                }) === false;
+                if (!handled && type === 'partial') {
                     let swapSpec = this.__parseSwapSpec(htmxElt.getAttribute(this.__prefix('hx-swap')) || this.config.defaultSwap);
                     tasks.push({
                         type: 'partial',
@@ -1211,13 +1217,6 @@ var htmx = (() => {
                         target: htmxElt.getAttribute(this.__prefix('hx-target')),
                         swapSpec,
                         sourceElement
-                    });
-                } else if (type) {
-                    this.__triggerExtensions(htmxElt, `htmx:process:${type}`, {
-                        ctx,
-                        fragment,
-                        sourceElement,
-                        tasks
                     });
                 }
                 htmxElt.remove();
