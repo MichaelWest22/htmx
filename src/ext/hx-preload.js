@@ -35,17 +35,29 @@
             let params = new URLSearchParams(body);
             if (params.size) action += (/\?/.test(action) ? "&" : "?") + params;
 
+            let fetchPromise = fetch(action, ctx.request);
+
             elt._htmx.preload = {
-                prefetch: fetch(action, ctx.request),
+                prefetch: fetchPromise,
                 action: action,
                 expiresAt: Date.now() + timeout
             };
 
-            try {
-                await elt._htmx.preload.prefetch;
-            } catch (error) {
+            fetchPromise.then(response => {
+                let html = response.clone().text();
+                return html.then(html => {
+                    let parser = new DOMParser();
+                    let doc = parser.parseFromString(html, 'text/html');
+                    let preloadLinks = doc.querySelectorAll('link[rel="preload"][href]');
+                    
+                    preloadLinks.forEach(link => {
+                        let href = new URL(link.getAttribute('href'), action).href;
+                        fetch(href, {mode: ctx.request.mode}).catch(() => {});
+                    });
+                });
+            }).catch(() => {
                 delete elt._htmx.preload;
-            }
+            });
         };
         elt.addEventListener(eventName, preloadListener);
         elt._htmx.preloadListener = preloadListener;
