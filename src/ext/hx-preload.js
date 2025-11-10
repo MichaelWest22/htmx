@@ -51,6 +51,9 @@
                     let preloadLinks = doc.querySelectorAll('link[rel="preload"][href]');
                     
                     preloadLinks.forEach(link => {
+                        let media = link.getAttribute('media');
+                        if (media && !window.matchMedia(media).matches) return;
+                        
                         let href = new URL(link.getAttribute('href'), action).href;
                         fetch(href, {mode: ctx.request.mode}).catch(() => {});
                     });
