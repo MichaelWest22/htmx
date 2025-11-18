@@ -80,7 +80,8 @@ var htmx = (() => {
                 determineMethodAndAction: this.__determineMethodAndAction.bind(this),
                 createRequestContext: this.__createRequestContext.bind(this),
                 collectFormData: this.__collectFormData.bind(this),
-                handleHxVals: this.__handleHxVals.bind(this)
+                handleHxVals: this.__handleHxVals.bind(this),
+                makeFragment: this.__makeFragment.bind(this)
             };
             document.addEventListener("DOMContentLoaded", () => {
                 this.__initHistoryHandling();
@@ -419,7 +420,7 @@ var htmx = (() => {
             let javascriptContent = this.__extractJavascriptContent(ctx.request.action);
             if (javascriptContent) {
                 let data = Object.fromEntries(ctx.request.body);
-                await this.__executeJavaScriptAsync(ctx.sourceElement, data, javascriptContent, false);
+                await this.__executeJavaScript(ctx.sourceElement, data, javascriptContent, false);
                 return
             } else if (/GET|DELETE/.test(ctx.request.method)) {
                 let params = new URLSearchParams(ctx.request.body);
@@ -453,7 +454,7 @@ var htmx = (() => {
                 if (confirmVal) {
                     let js = this.__extractJavascriptContent(confirmVal);
                     if (js) {
-                        if (!await this.__executeJavaScriptAsync(elt, {}, js, true)) {
+                        if (!await this.__executeJavaScript(elt, {}, js, true)) {
                             return
                         }
                     } else {
@@ -865,7 +866,7 @@ var htmx = (() => {
                     let original = spec.handler
                     spec.handler = (evt) => {
                         if (this.__shouldCancel(evt)) evt.preventDefault()
-                        if (this.__executeFilter(elt, evt, filter)) {
+                        if (this.__executeJavaScript(elt, evt, filter, true, false)) {
                             original(evt)
                         }
                     }
@@ -951,27 +952,16 @@ var htmx = (() => {
             return bound;
         }
 
-        async __executeJavaScriptAsync(thisArg, obj, code, expression = true) {
+        __executeJavaScript(thisArg, obj, code, expression = true, isAsync = true) {
             let args = {}
             Object.assign(args, this.__apiMethods(thisArg))
             Object.assign(args, obj)
             let keys = Object.keys(args);
             let values = Object.values(args);
-            let AsyncFunction = Object.getPrototypeOf(async function () {
-            }).constructor;
-            let func = new AsyncFunction(...keys, expression ? `return (${code})` : code);
-            return await func.call(thisArg, ...values);
-        }
-
-        __executeFilter(thisArg, event, code) {
-            let args = {}
-            Object.assign(args, this.__apiMethods(thisArg))
-            for (let key in event) {
-                args[key] = event[key];
-            }
-            let keys = Object.keys(args);
-            let values = Object.values(args);
-            let func = new Function(...keys, `return (${code})`);
+            let FunctionConstructor = isAsync 
+                ? (this.config.AsyncFunction || Object.getPrototypeOf(async function () {}).constructor)
+                : (this.config.Function || Function);
+            let func = new FunctionConstructor(...keys, expression ? `return (${code})` : code);
             return func.call(thisArg, ...values);
         }
 
@@ -1087,7 +1077,8 @@ var htmx = (() => {
             return Document.parseHTMLUnsafe?.(resp) || new DOMParser().parseFromString(resp, 'text/html');
         }
 
-        __makeFragment(text) {
+        __makeFragment(ctx) {
+            let text = ctx.text;
             let response = text.replace(/<hx-partial(\s+|>)/gi, '<template partial$1').replace(/<\/hx-partial>/gi, '</template>');
             let title = '';
             response = response.replace(/<title[^>]*>[\s\S]*?<\/title>/i, m => (title = this.__parseHTML(m).title, ''));
@@ -1238,7 +1229,7 @@ var htmx = (() => {
 
         async swap(ctx) {
             this.__handleHistoryUpdate(ctx);
-            let {fragment, title} = this.__makeFragment(ctx.text);
+            let {fragment, title} = this.#internalAPI.makeFragment(ctx);
             ctx.title = title;
             let tasks = [];
 
@@ -1608,7 +1599,7 @@ var htmx = (() => {
                     let code = node.getAttribute(attr);
                     node.addEventListener(evtName, async (evt) => {
                         try {
-                            await this.__executeJavaScriptAsync(node, {"event": evt}, code, false)
+                            await this.__executeJavaScript(node, {"event": evt}, code, false)
                         } catch (e) {
                             console.log(e);
                         }
@@ -1726,7 +1717,7 @@ var htmx = (() => {
                 let javascriptContent = this.__extractJavascriptContent(hxValsValue);
                 if (javascriptContent) {
                     // Return promise for async evaluation
-                    return this.__executeJavaScriptAsync(elt, {}, javascriptContent, true).then(obj => {
+                    return this.__executeJavaScript(elt, {}, javascriptContent, true).then(obj => {
                         for (let key in obj) {
                             body.append(key, obj[key])
                         }
@@ -1829,13 +1820,8 @@ var htmx = (() => {
         }
 
         __extractJavascriptContent(string) {
-            if (string != null) {
-                if (string.startsWith("js:")) {
-                    return string.substring(3);
-                } else if (string.startsWith("javascript:")) {
-                    return string.substring(11);
-                }
-            }
+            return string?.startsWith("js:") ? string.substring(3) :
+                   string?.startsWith("javascript:") ? string.substring(11) : undefined;
         }
 
         __initializeAbortListener(elt) {

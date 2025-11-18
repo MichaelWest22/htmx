@@ -1,23 +1,23 @@
 describe('bootstrap unit tests', function() {
     it("Test that fragment parsing works as expected", function() {
-        var result = htmx.__makeFragment("foo");
+        var result = htmx.__makeFragment({text: "foo"});
         var temp = document.createElement('div');
         temp.appendChild(result.fragment.cloneNode(true));
         assert.equal("foo", temp.textContent.trim())
 
         // Test that template partials are preserved in fragment
-        result = htmx.__makeFragment(`<template partial hx-target="#test">foo</template>`);
+        result = htmx.__makeFragment({text: `<template partial hx-target="#test">foo</template>`});
         temp = document.createElement('div');
         temp.appendChild(result.fragment.cloneNode(true));
         assert.include(temp.innerHTML, 'template')
     })
 
     it("__makeFragment handles multiple partials", function() {
-        var result = htmx.__makeFragment(`
+        var result = htmx.__makeFragment({text: `
             <div>Main content</div>
             <template partial hx-target="#test1">Partial 1</template>
             <template partial hx-target="#test2" hx-swap="innerHTML">Partial 2</template>
-        `);
+        `});
         var temp = document.createElement('div');
         temp.appendChild(result.fragment.cloneNode(true));
         assert.include(temp.innerHTML, "Main content")
@@ -25,21 +25,21 @@ describe('bootstrap unit tests', function() {
     })
 
     it("__makeFragment extracts title from HTML", function() {
-        var result = htmx.__makeFragment(`
+        var result = htmx.__makeFragment({text: `
             <html><head><title>Test Title</title></head><body>Content</body></html>
-        `);
+        `});
         assert.equal("Test Title", result.title)
     })
 
     it("__makeFragment handles body tag response", function() {
-        var result = htmx.__makeFragment(`<body><div>Content</div></body>`);
+        var result = htmx.__makeFragment({text: `<body><div>Content</div></body>`});
         var temp = document.createElement('div');
         temp.appendChild(result.fragment.cloneNode(true));
         assert.include(temp.innerHTML, "Content")
     })
 
     it("__makeFragment handles fragment response", function() {
-        var result = htmx.__makeFragment(`<div>Fragment</div><span>More</span>`);
+        var result = htmx.__makeFragment({text: `<div>Fragment</div><span>More</span>`});
         var temp = document.createElement('div');
         temp.appendChild(result.fragment.cloneNode(true));
         assert.include(temp.innerHTML, "Fragment")
