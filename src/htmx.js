@@ -344,10 +344,14 @@ var htmx = (() => {
             return ctx;
         }
 
+        __buildIdentifier(elt) {
+            return `${elt.tagName.toLowerCase()}#${elt.id || ''}~${[...elt.classList].join('~')}?${elt.name || ''}`;
+        }
+
         __determineHeaders(elt) {
             let headers = {
                 "HX-Request": "true",
-                "HX-Source": elt.id || elt.name,
+                "HX-Source": this.__buildIdentifier(elt),
                 "HX-Current-URL": location.href,
                 "Accept": "text/html, text/event-stream"
             };
@@ -417,6 +421,7 @@ var htmx = (() => {
             })
 
             if (!this.__trigger(elt, "htmx:config:request", {ctx: ctx})) return
+            ctx.request.headers["HX-Target"] = this.__buildIdentifier(this.__resolveTarget(elt, ctx.target));
             if (!this.#verbs.includes(ctx.request.method.toLowerCase())) return
             if (ctx.request.validate && ctx.request.form && !ctx.request.form.reportValidity()) return
 
