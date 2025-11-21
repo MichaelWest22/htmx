@@ -1,0 +1,12 @@
+{
+  "name": "htmx-esbuild-test",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "node build.js && node verify.js && npm run cleanup",
+    "cleanup": "rm -rf node_modules dist package-lock.json"
+  },
+  "devDependencies": {
+    "esbuild": "*"
+  }
+}

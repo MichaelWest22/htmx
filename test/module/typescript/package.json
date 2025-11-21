@@ -1,0 +1,12 @@
+{
+  "name": "htmx-typescript-test",
+  "version": "1.0.0",
+  "private": true,
+  "scripts": {
+    "test": "tsc --noEmit && node verify.js && npm run cleanup",
+    "cleanup": "rm -rf node_modules package-lock.json"
+  },
+  "devDependencies": {
+    "typescript": "*"
+  }
+}

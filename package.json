@@ -30,7 +30,10 @@
     "test:webkit": "web-test-runner --browsers webkit --config test/web-test-runner.config.mjs --playwright",
     "test:all": "web-test-runner --browsers chromium firefox webkit --config test/web-test-runner.config.mjs --playwright --concurrency 1",
     "test:manual": "node test/manual/server.js",
-
+    "test:module:webpack": "cd test/module/webpack && npm install && npm test",
+    "test:module:vite": "cd test/module/vite && npm install && npm test",
+    "test:module:esbuild": "cd test/module/esbuild && npm install && npm test",
+    "test:module:typescript": "cd test/module/typescript && npm install && npm test",
     "www": "bash scripts/www.sh",
     "site": "npm run site:css & npm run site:serve",
     "site:css": "cd www && npx @tailwindcss/cli -i ./static/css/input.css -o ./static/css/output.css --watch",
