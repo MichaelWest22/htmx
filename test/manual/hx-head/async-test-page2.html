@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Async Script Loading Test - Page 2</title>
+    <script src="../../../src/htmx.js"></script>
+    <script src="../../../src/ext/hx-head.js"></script>
+    <script src="sync-script.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .loaded { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body hx-ext="hx-head">
+
+<h1>Async Script Loading Test - Page 2</h1>
+
+<div class="status">
+    <div>Page 2 loaded</div>
+    <div id="sync-script-status">Sync script: Not loaded</div>
+    <div id="async-script-status">Async script: Not loaded</div>
+</div>
+
+<a hx-boost="true" href="async-test-index.html">Back to Page 1</a><br>
+<a hx-boost="true" href="async-test-page3.html">Go to Page 3 (with async script)</a>
+
+<div id="content">Content Area - Page 2 (should see sync script loaded BEFORE this swaps in)</div>
+
+<script>
+    // This should run after sync-script.js loads
+    if (window.syncScriptLoaded) {
+        document.getElementById('sync-script-status').innerHTML = 'Sync script: <span class="loaded">✓ Loaded before swap</span>';
+    } else {
+        document.getElementById('sync-script-status').innerHTML = 'Sync script: <span class="error">✗ Not loaded before swap</span>';
+    }
+</script>
+
+</body>
+</html>

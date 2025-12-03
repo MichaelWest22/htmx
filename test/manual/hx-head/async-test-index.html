@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Async Script Loading Test - Page 1</title>
+    <script src="../../../src/htmx.js"></script>
+    <script src="../../../src/ext/hx-head.js"></script>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .loaded { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body hx-ext="hx-head">
+
+<h1>Async Script Loading Test - Page 1</h1>
+
+<div class="status">
+    <div>Page 1 loaded</div>
+    <div id="sync-script-status">Sync script: Not loaded</div>
+    <div id="async-script-status">Async script: Not loaded</div>
+</div>
+
+<a hx-boost="true" href="async-test-page2.html">Go to Page 2 (with sync script)</a><br>
+<a hx-boost="true" href="async-test-page3.html">Go to Page 3 (with async script)</a><br>
+<a hx-boost="true" href="async-test-page4.html">Go to Page 4 (with stylesheet)</a>
+
+<div id="content">Content Area - Page 1</div>
+
+</body>
+</html>

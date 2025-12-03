@@ -48,8 +48,8 @@ describe('hx-trigger attribute', function() {
         let event = new CustomEvent("evt");
         event.foo = true
         form.dispatchEvent(event)
-        fetchMock.calls.length.should.equal(1)
         await forRequest()
+        fetchMock.calls.length.should.equal(1)
     })
 
     it('filters properly with true expression filter spec', async function() {
@@ -58,20 +58,21 @@ describe('hx-trigger attribute', function() {
         let event = new CustomEvent("evt");
         event.foo = true
         form.dispatchEvent(event)
-        fetchMock.calls.length.should.equal(1)
         await forRequest()
+        fetchMock.calls.length.should.equal(1)
     })
 
-    it('once modifier works', function () {
+    it('once modifier works', async function () {
         mockResponse('GET', '/test', "Response")
         createProcessedHTML('<button hx-trigger="click once" hx-get="/test"/></button>')
         find('button').click()
+        await forRequest()
         fetchMock.calls.length.should.equal(1)
         find('button').click()
         fetchMock.calls.length.should.equal(1)
     })
 
-    it('event listeners can filter on target', function() {
+    it('event listeners can filter on target', async function() {
         mockResponse('GET', '/test', "foo")
         createProcessedHTML('<div>' +
             '<div id="d1" hx-trigger="click from:body target:#d3" hx-get="/test">Requests: 0</div>' +
@@ -89,6 +90,7 @@ describe('hx-trigger attribute', function() {
         fetchMock.calls.length.should.equal(0)
 
         find('#d3').click()
+        await forRequest()
         fetchMock.calls.length.should.equal(1)
     })
 

@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Async Script Loading Test - Page 4</title>
+    <script src="../../../src/htmx.js"></script>
+    <script src="../../../src/ext/hx-head.js"></script>
+    <link rel="stylesheet" href="test-styles.css">
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        .status { margin: 10px 0; padding: 10px; background: #f0f0f0; }
+        .loaded { color: green; }
+        .error { color: red; }
+    </style>
+</head>
+<body hx-ext="hx-head">
+
+<h1>Async Script Loading Test - Page 4</h1>
+
+<div class="status">
+    <div>Page 4 loaded</div>
+    <div id="stylesheet-status">Stylesheet: Checking...</div>
+</div>
+
+<a hx-boost="true" href="async-test-index.html">Back to Page 1</a>
+
+<div id="content" class="styled-content">Content Area - Page 4 (should be styled by external CSS before swap)</div>
+
+<script>
+    // Check if stylesheet was applied
+    const content = document.getElementById('content');
+    const styles = window.getComputedStyle(content);
+    const statusEl = document.getElementById('stylesheet-status');
+    
+    if (styles.border && styles.border.includes('2px')) {
+        statusEl.innerHTML = 'Stylesheet: <span class="loaded">✓ Loaded before swap</span>';
+    } else {
+        statusEl.innerHTML = 'Stylesheet: <span class="error">✗ Not loaded before swap</span>';
+    }
+</script>
+
+</body>
+</html>

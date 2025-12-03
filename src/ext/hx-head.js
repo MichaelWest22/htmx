@@ -1,7 +1,8 @@
 //==========================================================
 // head-support.js
 //
-// An extension to add head tag merging.
+// An extension to add head tag merging with async asset loading.
+// Loads scripts and CSS before swap to replicate full page load behavior.
 //==========================================================
 (function () {
 
@@ -11,7 +12,19 @@
         //console.log(arguments)
     }
 
-    function mergeHead(newContent, defaultMergeStrategy) {
+    /**
+     * Load an element and wait for it to load
+     */
+    function loadElement(element) {
+        return new Promise((resolve, reject) => {
+            element.onload = resolve;
+            element.onerror = reject;
+            document.head.appendChild(element);
+        });
+    }
+
+
+    async function mergeHead(newContent, defaultMergeStrategy) {
 
         if (newContent && newContent.indexOf('<head') > -1) {
             const htmlDoc = document.createElement("html")
@@ -84,15 +97,32 @@
                 nodesToAppend.push(...srcToNewHeadNodes.values())
                 log("to append: ", nodesToAppend)
 
+                let loadPromises = [];
+                
                 for (const newNode of nodesToAppend) {
                     log("adding: ", newNode)
                     let newElt = document.createRange().createContextualFragment(newNode.outerHTML)
                     log(newElt)
+                                        
+                    const isScript = newElt.tagName === 'SCRIPT';
+                    const isStylesheet = newElt.tagName === 'LINK' && newElt.rel === 'stylesheet';
+                    const isAsyncScript = isScript && newElt.hasAttribute('async');
+                    
                     if (htmx.trigger(document.body, "htmx:before:head:add", {headElement: newElt}) !== false) {
-                        currentHead.appendChild(newElt)
-                        added.push(newElt)
+                        if ((isScript && newElt.src && !isAsyncScript) || isStylesheet) {
+                            loadPromises.push(
+                                loadElement(newElt)
+                                    .then(() => added.push(newElt))
+                                    .catch(e => console.error('Failed to load:', newElt.src || newElt.href, e))
+                            );
+                        } else {
+                            currentHead.appendChild(newElt);
+                            added.push(newElt);
+                        }
                     }
                 }
+                
+                await Promise.all(loadPromises);
 
                 // remove all removed elements, after we have appended the new elements to avoid
                 // additional network requests for things like style sheets
@@ -115,13 +145,14 @@
         init: (internalAPI) => {
             api = internalAPI;
         },
-        htmx_after_swap: (elt, detail) => {
+        
+        htmx_before_swap: async (elt, detail) => {
             let ctx = detail.ctx
             let target = ctx.target
             // TODO - is there a better way to handle this?  it used to be based on if the element was boosted
             let defaultMergeStrategy = target === document.body ? "merge" : "append";
             if (htmx.trigger(document.body, "htmx:before:head:merge", detail)) {
-                mergeHead(ctx.text, defaultMergeStrategy)
+                await mergeHead(ctx.text, defaultMergeStrategy)
             }
         }
     })

@@ -425,7 +425,7 @@ var htmx = (() => {
                 body
             })
 
-            if (!this.__trigger(elt, "htmx:config:request", {ctx: ctx})) return
+            if (!await this.__triggerAsync(elt, "htmx:config:request", {ctx: ctx})) return
             if (!this.#verbs.includes(ctx.request.method.toLowerCase())) return
             if (ctx.request.validate && ctx.request.form && !ctx.request.form.reportValidity()) return
 
@@ -483,7 +483,7 @@ var htmx = (() => {
                 }
                 
                 ctx.fetch ||= window.fetch.bind(window)
-                if (!this.__trigger(elt, "htmx:before:request", {ctx})) return;
+                if (!await this.__triggerAsync(elt, "htmx:before:request", {ctx})) return;
 
                 let response = await ctx.fetch(ctx.request.action, ctx.request);
 
@@ -497,7 +497,7 @@ var htmx = (() => {
                 if (!ctx.isSSE) {
                     ctx.text = await response.text();
                 }
-                if (!this.__trigger(elt, "htmx:after:request", {ctx})) return;
+                if (!await this.__triggerAsync(elt, "htmx:after:request", {ctx})) return;
 
                 if(this.__handleHeadersAndMaybeReturnEarly(ctx)){
                     return
@@ -605,7 +605,7 @@ var htmx = (() => {
                     let reconnect = {attempt, delay, lastEventId, cancelled: false};
 
                     ctx.status = "reconnecting to stream";
-                    if (!this.__trigger(elt, "htmx:before:sse:reconnect", {
+                    if (!await this.__triggerAsync(elt, "htmx:before:sse:reconnect", {
                         ctx,
                         reconnect
                     }) || reconnect.cancelled) break;
@@ -625,7 +625,7 @@ var htmx = (() => {
                 }
 
                 // Core streaming logic
-                if (!this.__trigger(elt, "htmx:before:sse:stream", {ctx})) break;
+                if (!await this.__triggerAsync(elt, "htmx:before:sse:stream", {ctx})) break;
                 ctx.status = "streaming";
 
                 attempt = 0; // Reset on successful connection
@@ -640,7 +640,7 @@ var htmx = (() => {
                         }
 
                         let msg = {data: sseMessage.data, event: sseMessage.event, id: sseMessage.id, cancelled: false};
-                        if (!this.__trigger(elt, "htmx:before:sse:message", {
+                        if (!await this.__triggerAsync(elt, "htmx:before:sse:message", {
                             ctx,
                             message: msg
                         }) || msg.cancelled) continue;
@@ -1191,7 +1191,7 @@ var htmx = (() => {
             return {style: this.__normalizeSwapStyle(style), ...this.__parseConfig(swapStr)};
         }
 
-        __processPartials(fragment, ctx) {
+        async __processPartials(fragment, ctx) {
             let tasks = [];
 
             for (let templateElt of fragment.querySelectorAll('template[hx]')) {
@@ -1206,7 +1206,7 @@ var htmx = (() => {
                         sourceElement: ctx.sourceElement
                     });
                 } else {
-                    this.__triggerExtensions(templateElt, 'htmx:process:' + type, { ctx, tasks });
+                    await this.__triggerExtensionsAsync(templateElt, 'htmx:process:' + type, { ctx, tasks });
                 }
                 templateElt.remove();
             }
@@ -1267,7 +1267,7 @@ var htmx = (() => {
 
             // Process OOB and partials
             let oobTasks = this.__processOOB(fragment, ctx.sourceElement, ctx.selectOOB);
-            let partialTasks = this.__processPartials(fragment, ctx);
+            let partialTasks = await this.__processPartials(fragment, ctx);
             tasks.push(...oobTasks, ...partialTasks);
 
             // Process main swap
@@ -1283,16 +1283,16 @@ var htmx = (() => {
             let transitionTasks = tasks.filter(t => t.transition);
             let nonTransitionTasks = tasks.filter(t => !t.transition);
 
-            if(!this.__trigger(document, "htmx:before:swap", {ctx, tasks})){
+            if(!await this.__triggerAsync(document, "htmx:before:swap", {ctx, tasks})){
                 return
             }
 
             // insert non-transition tasks immediately or with delay
             for (let task of nonTransitionTasks) {
-                if (task.swapSpec?.swap) {
-                    setTimeout(() => this.__insertContent(task), this.parseInterval(task.swapSpec.swap));
-                } else {
-                    this.__insertContent(task)
+                    if (task.swapSpec?.swap) {
+                        setTimeout(() => this.__insertContent(task), this.parseInterval(task.swapSpec.swap));
+                    } else {
+                        this.__insertContent(task)
                 }
             }
 
@@ -1426,8 +1426,15 @@ var htmx = (() => {
                 console.log(eventName, detail, on)
             }
             on = this.__normalizeElement(on)
-            this.__triggerExtensions(on, eventName, detail);
-            return this.trigger(on, eventName, detail, bubbles)
+            return this.__triggerExtensions(on, eventName, detail) && this.trigger(on, eventName, detail, bubbles);
+        }
+
+        async __triggerAsync(on, eventName, detail = {}, bubbles = true) {
+            if (this.config.logAll) {
+                console.log(eventName, detail, on)
+            }
+            on = this.__normalizeElement(on)
+            return await this.__triggerExtensionsAsync(on, eventName, detail) && this.trigger(on, eventName, detail, bubbles);
         }
 
         __triggerExtensions(elt, eventName, detail = {}) {
@@ -1436,6 +1443,20 @@ var htmx = (() => {
                 detail.cancelled = false;
                 for (const fn of methods) {
                     if (fn(elt, detail) === false || detail.cancelled) {
+                        detail.cancelled = true;
+                        return false;
+                    }
+                }
+            }
+            return true;
+        }
+
+        async __triggerExtensionsAsync(elt, eventName, detail = {}) {
+            let methods = this.__extMethods.get(eventName.replace(/:/g, '_'))
+            if (methods) {
+                detail.cancelled = false;
+                for (const fn of methods) {
+                    if (await fn(elt, detail) === false || detail.cancelled) {
                         detail.cancelled = true;
                         return false;
                     }
