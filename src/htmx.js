@@ -384,7 +384,7 @@ var htmx = (() => {
             if (selector instanceof Element) {
                 return selector;
             } else if (selector != null) {
-                return this.__findExt(elt, selector, "hx-target");
+                return this.__findAllThis(elt, selector, "hx-target")[0];
             } else if (this.__isBoosted(elt)) {
                 return document.body
             } else {
@@ -1673,7 +1673,7 @@ var htmx = (() => {
             if (!indicatorsSelector) {
                 indicatorElements = [elt]
             } else {
-                indicatorElements = this.__findAllExt(elt, indicatorsSelector, "hx-indicator");
+                indicatorElements = this.__findAllThis(elt, indicatorsSelector, "hx-indicator");
             }
             for (const indicator of indicatorElements) {
                 indicator._htmxReqCount ||= 0
@@ -1699,7 +1699,7 @@ var htmx = (() => {
             let disabledSelector = this.__attributeValue(elt, "hx-disable");
             let disabledElements = []
             if (disabledSelector) {
-                disabledElements = this.__findAllExt(elt, disabledSelector, "hx-disable");
+                disabledElements = this.__findAllThis(elt, disabledSelector, "hx-disable");
                 for (let indicator of disabledElements) {
                     indicator._htmxDisableCount ||= 0
                     indicator._htmxDisableCount++
@@ -1815,11 +1815,18 @@ var htmx = (() => {
             return s.startsWith('<') && s.endsWith('/>') ? s.slice(1, -2) : s;
         }
 
-        __findAllExt(eltOrSelector, maybeSelector, thisAttr, global) {
+        __findAllThis(elt, selector, thisAttr) {
+            if (selector === 'this') {
+                return [this.__attributeValue(elt, thisAttr, undefined, true)];
+            }
+            return this.__findAllExt(elt, selector);
+        }
+
+        __findAllExt(eltOrSelector, maybeSelector, global) {
             let selector = maybeSelector ?? eltOrSelector;
             let elt = maybeSelector ? this.__normalizeElement(eltOrSelector) : document;
             if (selector.startsWith('global ')) {
-                return this.__findAllExt(elt, selector.slice(7), thisAttr, true);
+                return this.__findAllExt(elt, selector.slice(7), true);
             }
             let parts = selector ? selector.replace(/<[^>]+\/>/g, m => m.replace(/,/g, '%2C'))
                 .split(',').map(p => p.replace(/%2C/g, ',')) : [];
@@ -1850,8 +1857,6 @@ var htmx = (() => {
                     item = document.body
                 } else if (selector === 'host') {
                     item = (elt.getRootNode()).host
-                } else if (selector === 'this') {
-                    item = thisAttr ? this.__attributeValue(elt, thisAttr, undefined, true) : elt
                 } else {
                     unprocessedParts.push(selector)
                 }
@@ -1895,8 +1900,8 @@ var htmx = (() => {
             }
         }
 
-        __findExt(eltOrSelector, selector, thisAttr) {
-            return this.__findAllExt(eltOrSelector, selector, thisAttr)[0]
+        __findExt(eltOrSelector, selector) {
+            return this.__findAllExt(eltOrSelector, selector)[0]
         }
 
         __extractJavascriptContent(string) {
