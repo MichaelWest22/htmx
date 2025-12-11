@@ -16,6 +16,7 @@
         .event-title { font-weight: bold; margin: 5px 0; }
         .alert { padding: 10px; margin: 10px 0; background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; }
         #events { min-height: 100px; }
+        iframe { margin-top: 10px; }
     </style>
 </head>
 <body hx-ext="upsert">
@@ -85,12 +86,15 @@
             const desc = eventDescriptions[Math.floor(Math.random() * eventDescriptions.length)];
             const alert = alerts[Math.floor(Math.random() * alerts.length)];
             
+            const video = Math.random() < 0.2 ? '<iframe id="rick-roll" width="617" height="351" src="https://www.youtube.com/embed/dQw4w9WgXcQ" title="Rick Astley - Never Gonna Give You Up (Official Music Video)" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerpolicy="strict-origin-when-cross-origin" allowfullscreen=""></iframe>' : '';
+            
             const html = `
                 <div class="alert">${alert}</div>
                 <div class="event-card new" data-date="${dateStr}">
                     <div class="event-date">${displayDate}</div>
                     <div class="event-title">${title}</div>
                     <div>${desc}</div>
+                    ${video}
                 </div>
             `;
             
