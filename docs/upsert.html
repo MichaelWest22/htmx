@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>hx-upsert Demo</title>
+    <script src="htmx4.js"></script>
+    <script src="hx-upsert.js"></script>
+    <script src="fetch-mock.js"></script>
+    <script>installFetchMock()</script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 20px auto; padding: 0 20px; }
+        .controls { margin: 20px 0; padding: 15px; background: #f5f5f5; border-radius: 5px; }
+        button { margin: 5px; padding: 8px 15px; cursor: pointer; }
+        .event-card { border: 1px solid #ddd; padding: 15px; margin: 10px 0; border-radius: 5px; background: white; }
+        .event-card.new { background: #e8f5e9; }
+        .event-date { color: #666; font-size: 0.9em; }
+        .event-title { font-weight: bold; margin: 5px 0; }
+        .alert { padding: 10px; margin: 10px 0; background: #fff3cd; border: 1px solid #ffc107; border-radius: 5px; }
+        #events { min-height: 100px; }
+    </style>
+</head>
+<body hx-ext="upsert">
+    <h1>hx-upsert Extension Demo</h1>
+    
+    <div class="controls">
+        <h3>Add Random Event (Last 10 Days)</h3>
+        <button hx-get="/mock/event" hx-target="#events" hx-swap="upsert key:data-date">Upsert (default)</button>
+        <button hx-get="/mock/event" hx-target="#events" hx-swap="upsert key:data-date sort">Upsert + Sort Asc</button>
+        <button hx-get="/mock/event" hx-target="#events" hx-swap="upsert key:data-date sort:desc">Upsert + Sort Desc</button>
+        <button hx-get="/mock/event" hx-target="#events" hx-swap="upsert key:data-date sort prepend">Sort Asc + Prepend Alert</button>
+        <button hx-get="/mock/event" hx-target="#events" hx-swap="upsert key:data-date sort:desc prepend">Sort Desc + Prepend Alert</button>
+    </div>
+
+    <div id="events"></div>
+
+    <script>
+        const alerts = [
+            "🎉 Surprise! Another event has appeared!",
+            "🚀 Event incoming at warp speed!",
+            "🎪 Step right up! New event in town!",
+            "🎲 You rolled a new event!",
+            "🌟 A wild event appeared!",
+            "🎭 Plot twist: New event added!",
+            "🎨 Fresh event, hot off the press!",
+            "🎯 Bullseye! Event added successfully!",
+            "🎸 Rock on! New event just dropped!",
+            "🎮 Achievement unlocked: New event!"
+        ];
+
+        const eventTitles = [
+            "🐛 Debug the Debugger",
+            "🚀 Rocket Science 101",
+            "🎪 Circus of Code",
+            "🍕 Pizza-Driven Development",
+            "🦆 Rubber Duck Debugging",
+            "🎸 Rock & Roll Refactoring",
+            "🌮 Taco Tuesday Deployment",
+            "🧠 Brain Melt Meeting",
+            "🎭 Improv Coding Session",
+            "🦄 Unicorn Sprint Planning"
+        ];
+
+        const eventDescriptions = [
+            "Bring your rubber ducks!",
+            "Chaos guaranteed",
+            "Expect the unexpected",
+            "Free pizza (maybe)",
+            "Bring aspirin",
+            "Prepare for madness",
+            "Buckle up!",
+            "Sanity optional",
+            "Bring coffee IV",
+            "Abandon hope all ye who enter"
+        ];
+
+        // Mock server response
+        fetchMock.mockResponse('GET', '/mock/event', () => {
+            const now = new Date();
+            const tenDaysAgo = new Date(now.getTime() - 10 * 24 * 60 * 60 * 1000);
+            const randomTime = tenDaysAgo.getTime() + Math.random() * (now.getTime() - tenDaysAgo.getTime());
+            const randomDate = new Date(randomTime);
+            const dateStr = randomDate.toISOString().split('T')[0];
+            const displayDate = randomDate.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+            
+            const title = eventTitles[Math.floor(Math.random() * eventTitles.length)];
+            const desc = eventDescriptions[Math.floor(Math.random() * eventDescriptions.length)];
+            const alert = alerts[Math.floor(Math.random() * alerts.length)];
+            
+            const html = `
+                <div class="alert">${alert}</div>
+                <div class="event-card new" data-date="${dateStr}">
+                    <div class="event-date">${displayDate}</div>
+                    <div class="event-title">${title}</div>
+                    <div>${desc}</div>
+                </div>
+            `;
+            
+            return new MockResponse(html);
+        });
+    </script>
+</body>
+</html>
