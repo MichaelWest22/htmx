@@ -818,31 +818,83 @@ describe('hx-ws WebSocket extension', function() {
             assert.isTrue(errorFired);
         });
         
-        it('emits htmx:wsUnknownMessage for non-JSON data', async function() {
+        it('swaps raw HTML when non-JSON data is received', async function() {
             let container = createProcessedHTML(`
-                <div hx-ws:connect="/ws/test" hx-trigger="load"></div>
+                <div hx-ws:connect="/ws/test" hx-trigger="load" hx-target="#content">
+                    <div id="content">Original</div>
+                </div>
             `);
             await htmx.timeout(50);
             
-            let unknownFired = false;
-            let receivedData = null;
-            container.addEventListener('htmx:wsUnknownMessage', (e) => {
-                unknownFired = true;
-                receivedData = e.detail.data;
-            });
-            
             let ws = mockWebSocketInstances[0];
-            // Send raw non-JSON data
-            ws.simulateRawMessage('not valid json {{{');
+            ws.simulateRawMessage('<div>Raw HTML</div>');
             await htmx.timeout(20);
             
-            assert.isTrue(unknownFired);
-            assert.equal(receivedData, 'not valid json {{{');
+            assert.include(document.getElementById('content').innerHTML, 'Raw HTML');
+        });
+        
+        it('processes raw HTML with partials', async function() {
+            let container = createProcessedHTML(`
+                <div hx-ws:connect="/ws/test" hx-trigger="load">
+                    <div id="target1"></div>
+                    <div id="target2"></div>
+                </div>
+            `);
+            await htmx.timeout(50);
+            
+            let ws = mockWebSocketInstances[0];
+            ws.simulateRawMessage(`
+                <hx-partial id="target1">Content 1</hx-partial>
+                <hx-partial id="target2">Content 2</hx-partial>
+            `);
+            await htmx.timeout(20);
+            
+            assert.include(document.getElementById('target1').innerHTML, 'Content 1');
+            assert.include(document.getElementById('target2').innerHTML, 'Content 2');
         });
     });
     
     // ========================================
-    // 6. CONFIGURATION TESTS
+    // 6. RAW HTML RESPONSE TESTS
+    // ========================================
+    
+    describe('Raw HTML Responses', function() {
+        
+        it('treats non-JSON data as HTML content', async function() {
+            let container = createProcessedHTML(`
+                <div hx-ws:connect="/ws/test" hx-trigger="load" hx-target="#result">
+                    <div id="result"></div>
+                </div>
+            `);
+            await htmx.timeout(50);
+            
+            let ws = mockWebSocketInstances[0];
+            ws.simulateRawMessage('<p>Simple HTML</p>');
+            await htmx.timeout(20);
+            
+            assert.include(document.getElementById('result').innerHTML, 'Simple HTML');
+        });
+        
+        it('applies default swap strategy to raw HTML', async function() {
+            let container = createProcessedHTML(`
+                <div hx-ws:connect="/ws/test" hx-trigger="load" hx-target="#content" hx-swap="beforeend">
+                    <div id="content"><p>Existing</p></div>
+                </div>
+            `);
+            await htmx.timeout(50);
+            
+            let ws = mockWebSocketInstances[0];
+            ws.simulateRawMessage('<p>Appended</p>');
+            await htmx.timeout(20);
+            
+            let content = document.getElementById('content');
+            assert.include(content.innerHTML, 'Existing');
+            assert.include(content.innerHTML, 'Appended');
+        });
+    });
+    
+    // ========================================
+    // 8. CONFIGURATION TESTS
     // ========================================
     
     describe('Configuration', function() {
@@ -901,7 +953,7 @@ describe('hx-ws WebSocket extension', function() {
     });
     
     // ========================================
-    // 7. EVENT EMISSION TESTS
+    // 9. EVENT EMISSION TESTS
     // ========================================
     
     describe('Event Emission', function() {
@@ -1019,7 +1071,7 @@ describe('hx-ws WebSocket extension', function() {
     });
     
     // ========================================
-    // 8. BACKWARD COMPATIBILITY TESTS
+    // 10. BACKWARD COMPATIBILITY TESTS
     // ========================================
     
     describe('Backward Compatibility', function() {
@@ -1059,7 +1111,7 @@ describe('hx-ws WebSocket extension', function() {
     });
     
     // ========================================
-    // 9. INTEGRATION TESTS
+    // 11. INTEGRATION TESTS
     // ========================================
     
     describe('Integration Scenarios', function() {
@@ -1152,7 +1204,7 @@ describe('hx-ws WebSocket extension', function() {
     });
 
     // ========================================
-    // 10. TARGET AND SWAP OVERRIDE TESTS
+    // 12. TARGET AND SWAP OVERRIDE TESTS
     // ========================================
     
     describe('Target and Swap Overrides', function() {

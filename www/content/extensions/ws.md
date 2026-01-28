@@ -77,8 +77,9 @@ This means you can use simple relative paths in most cases, and the extension wi
 
 ### JSON Envelope Format
 
-Messages from the server should be JSON objects:
+Messages from the server can be either JSON objects or raw HTML:
 
+**JSON Envelope (full control):**
 ```json
 {
     "channel": "ui",
@@ -89,6 +90,13 @@ Messages from the server should be JSON objects:
     "request_id": "abc-123"
 }
 ```
+
+**Raw HTML (simple):**
+```html
+<div class='notification'>New message!</div>
+```
+
+Raw HTML messages are automatically treated as if they were sent with `{"channel": "ui", "format": "html", "payload": "..."}` and use the element's `hx-target` and `hx-swap` attributes.
 
 | Field | Default | Description |
 |-------|---------|-------------|
@@ -274,7 +282,6 @@ Use `hx-trigger` when you want to **delay** connection establishment (e.g., wait
 | `htmx:before:ws:message` | ✅ | `{envelope, element}` | Before processing received message |
 | `htmx:after:ws:message` | ❌ | `{envelope, element}` | After processing received message |
 | `htmx:wsMessage` | ❌ | `{channel, format, payload, ...}` | For non-UI channel messages |
-| `htmx:wsUnknownMessage` | ❌ | `{data, parseError}` | For non-JSON messages |
 
 ### Event Examples
 
@@ -372,9 +379,14 @@ Swap strategy is determined in this order:
 </div>
 ```
 
-Server sends:
+Server can send either JSON envelopes or raw HTML:
 ```json
 {"payload": "<div class='message'><b>User:</b> Hello!</div>"}
+```
+
+Or simply:
+```html
+<div class='message'><b>User:</b> Hello!</div>
 ```
 
 ### Real-Time Notifications

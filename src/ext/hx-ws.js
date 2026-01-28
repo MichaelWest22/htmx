@@ -424,12 +424,8 @@
         try {
             envelope = JSON.parse(event.data);
         } catch (e) {
-            // Not JSON, emit unknown message event for parse failures
-            let firstElement = entry.elements.values().next().value;
-            if (firstElement) {
-                triggerEvent(firstElement, 'htmx:wsUnknownMessage', { data: event.data, parseError: e });
-            }
-            return;
+            // Not JSON - treat as raw HTML content
+            envelope = { payload: event.data };
         }
         
         // Apply defaults for channel and format
