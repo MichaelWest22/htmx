@@ -467,7 +467,11 @@
         let target = resolveTarget(element, envelope.target);
         let swapStyle = envelope.swap || api.attributeValue(element, 'hx-swap') || htmx.config.defaultSwap;
         
-        // Always call swap even if target is null - partials in payload may have their own targets
+        // If no target, use swap:none to skip main content but still process partials
+        if (!target) {
+            swapStyle = 'none';
+        }
+        
         htmx.swap({
             sourceElement: element,
             target: target,
@@ -491,7 +495,9 @@
             }
             return document.querySelector(targetSelector);
         }
-        return element;
+        
+        // No explicit target - return null so we use swap none and htmx only processes partials
+        return null;
     }
     
     // ========================================

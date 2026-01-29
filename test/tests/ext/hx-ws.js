@@ -891,6 +891,51 @@ describe('hx-ws WebSocket extension', function() {
             assert.include(content.innerHTML, 'Existing');
             assert.include(content.innerHTML, 'Appended');
         });
+        
+        it('ignores raw HTML without target or partials', async function() {
+            let container = createProcessedHTML(`
+                <div hx-ws:connect="/ws/test" hx-trigger="load">
+                    <div id="safe-content">Should not be replaced</div>
+                </div>
+            `);
+            await htmx.timeout(50);
+            
+            let safeContent = container.querySelector('#safe-content');
+            let originalText = safeContent.textContent;
+            
+            let ws = mockWebSocketInstances[0];
+            ws.simulateRawMessage('<p>This should be ignored</p>');
+            await htmx.timeout(20);
+            
+            assert.equal(safeContent.textContent, originalText);
+        });
+        
+        it('processes only partials when no target specified', async function() {
+            let container = createProcessedHTML(`
+                <div hx-ws:connect="/ws/test" hx-trigger="load">
+                    <div id="widget1">Original 1</div>
+                    <div id="widget2">Original 2</div>
+                    <div id="untargeted">Should not change</div>
+                </div>
+            `);
+            await htmx.timeout(50);
+            
+            let widget1 = container.querySelector('#widget1');
+            let widget2 = container.querySelector('#widget2');
+            let untargeted = container.querySelector('#untargeted');
+            
+            let ws = mockWebSocketInstances[0];
+            ws.simulateRawMessage(`
+                <div>This main content should be ignored</div>
+                <hx-partial id="widget1">Updated 1</hx-partial>
+                <hx-partial id="widget2">Updated 2</hx-partial>
+            `);
+            await htmx.timeout(20);
+            
+            assert.include(widget1.innerHTML, 'Updated 1');
+            assert.include(widget2.innerHTML, 'Updated 2');
+            assert.equal(untargeted.textContent, 'Should not change');
+        });
     });
     
     // ========================================
