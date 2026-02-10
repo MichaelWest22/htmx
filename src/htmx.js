@@ -2124,6 +2124,10 @@ var htmx = (() => {
 
             if (type === 1) {
                 if (this.config.morphSkip && oldNode.matches?.(this.config.morphSkip)) return;
+                
+                // Trigger extension hook - if returns false, skip morphing this node
+                if (!this.__triggerExtensions(oldNode, "htmx:before:morph:node", {oldNode, newNode})) return;
+                
                 this.__copyAttributes(oldNode, newNode);
                 if (oldNode instanceof HTMLTextAreaElement && oldNode.defaultValue != newNode.defaultValue) {
                     oldNode.value = newNode.value;
@@ -2135,7 +2139,8 @@ var htmx = (() => {
             }
             
             let skipChildren = this.config.morphSkipChildren && oldNode.matches?.(this.config.morphSkipChildren);
-            if (!skipChildren && !oldNode.isEqualNode(newNode)) this.__morphChildren(ctx, oldNode, newNode);
+            // Template elements need children morphed even if isEqualNode returns true
+            if (!skipChildren && (newNode.tagName === 'TEMPLATE' || !oldNode.isEqualNode(newNode))) this.__morphChildren(ctx, oldNode, newNode);
         }
 
         __copyAttributes(destination, source) {
@@ -2261,11 +2266,9 @@ var htmx = (() => {
                     let clone = elt.cloneNode(false); // shallow clone node
                     this.__copyAttributes(elt, existing)
                     // Allow extensions to handle transition task creation
-                    if (this.__triggerExtensions(elt, "htmx:transition:task", {existing, clone, restoreTasks}) !== false) {
-                        restoreTasks.push(()=>{
-                            this.__copyAttributes(elt, clone)
-                        })
-                    }
+                    restoreTasks.push(()=>{
+                        this.__copyAttributes(elt, clone)
+                    })
                 }
             }
             return restoreTasks;
