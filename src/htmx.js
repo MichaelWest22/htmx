@@ -1505,8 +1505,9 @@ var htmx = (() => {
             } finally {
                 target.classList.remove("htmx-swapping")
             }
+            let focusInPantry = focusInfo && pantry.contains(focusInfo.elt);
             this.__restorePreservedElements(pantry);
-            if (focusInfo && !focusInfo.elt.isConnected) {
+            if (focusInfo && (focusInPantry || !focusInfo.elt.isConnected)) {
                 let newElt = document.getElementById(focusInfo.elt.id);
                 if (newElt) {
                     let focusOptions = { preventScroll: swapSpec.focusScroll !== undefined ? !swapSpec.focusScroll : !this.config.defaultFocusScroll };
