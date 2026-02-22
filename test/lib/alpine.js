@@ -3432,15 +3432,13 @@ ${expression ? 'Expression: "' + expression + '"\n\n' : ""}`, el);
   // packages/alpinejs/src/directives/x-ref.js
   function handler3() {
   }
-  handler3.inline = (el, { expression }, { cleanup: cleanup2 }) => {
+  handler3.inline = skipDuringClone((el, { expression }, { cleanup: cleanup2 }) => {
     let root = closestRoot(el);
-    if (!root)
-      return;
     if (!root._x_refs)
       root._x_refs = {};
     root._x_refs[expression] = el;
     cleanup2(() => delete root._x_refs[expression]);
-  };
+  });
   directive("ref", handler3);
 
   // packages/alpinejs/src/directives/x-if.js

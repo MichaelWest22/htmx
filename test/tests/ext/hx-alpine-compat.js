@@ -478,6 +478,29 @@ describe('hx-alpine-compat extension', function() {
         assert.equal(div.querySelector('#target2')?.textContent, 'Moved');
     })
 
+    it('updates x-for list when x-data errors array changes via outerMorph', async function () {
+        mockResponse('GET', '/form/', '<div id="target" hx-get="/form/" hx-target="#target" hx-swap="outerMorph" x-data="{ errors: [\'field is required\', \'too short\'] }"><input type="text"><ul><template x-for="error in errors"><li x-text="error"></li></template></ul></div>');
+
+        const div = createProcessedHTML(
+            '<div id="target" hx-get="/form/" hx-target="#target" hx-swap="outerMorph" x-data="{ errors: [\'\'] }">' +
+            '  <input type="text">' +
+            '  <ul><template x-for="error in errors"><li x-text="error"></li></template></ul>' +
+            '</div>'
+        );
+
+        await htmx.timeout(50);
+
+        div.click();
+        await forRequest();
+        await htmx.timeout(50);
+
+        const newTarget = document.getElementById('target');
+        const items = newTarget.querySelectorAll('li');
+        assert.equal(items.length, 2);
+        assert.equal(items[0].textContent, 'field is required');
+        assert.equal(items[1].textContent, 'too short');
+    })
+
     it('preserves Alpine x-for state during innerMorph swap', async function () {
         mockResponse('GET', '/todos', '<template x-for="item in items" :key="item"><div x-text="item + \' (morphed)\'"></div></template>');
         

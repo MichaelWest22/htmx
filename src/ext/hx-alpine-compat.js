@@ -8,6 +8,7 @@
 (() => {
     let api;
     let deferCount = 0;
+    let pendingXDataUpdates = [];
 
     htmx.registerExtension('alpine-compat', {
         init: (internalAPI) => {
@@ -54,9 +55,16 @@
                 return;
             }
             let {oldNode, newNode} = detail;
-            
             let oldDataStack = window.Alpine.closestDataStack(oldNode);
             newNode._x_dataStack = oldDataStack;
+
+            // When x-data changes, defer it: trick morph into seeing no change,
+            // then apply the real value after morph so Alpine re-evaluates reactively.
+            if (oldNode.hasAttribute?.('x-data') && newNode.hasAttribute?.('x-data') &&
+                oldNode.getAttribute('x-data') !== newNode.getAttribute('x-data')) {
+                pendingXDataUpdates.push({ node: oldNode, value: newNode.getAttribute('x-data') });
+                newNode.setAttribute('x-data', oldNode.getAttribute('x-data'));
+            }
             
             // skip cloneNode for template children that will have errors as they can not have reactive content 
             if (!oldNode.isConnected) return;
@@ -77,6 +85,18 @@
             }
             if (deferCount === 0 && window.Alpine?.flushAndStopDeferringMutations) {
                 window.Alpine.flushAndStopDeferringMutations();
+                // Apply deferred x-data updates by mutating live reactive data directly
+                for (let {node, value} of pendingXDataUpdates) {
+                    if (!node.isConnected) continue;
+                    try {
+                        let newData = Alpine.evaluate(node, value);
+                        let liveData = node._x_dataStack?.[0];
+                        if (liveData) {
+                            for (let key of Object.keys(newData)) liveData[key] = newData[key];
+                        }
+                    } catch (e) {}
+                }
+                pendingXDataUpdates = [];
             }
         }
     });
