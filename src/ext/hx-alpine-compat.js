@@ -88,13 +88,9 @@
                 // Apply deferred x-data updates by mutating live reactive data directly
                 for (let {node, value} of pendingXDataUpdates) {
                     if (!node.isConnected) continue;
-                    try {
-                        let newData = Alpine.evaluate(node, value);
-                        let liveData = node._x_dataStack?.[0];
-                        if (liveData) {
-                            for (let key of Object.keys(newData)) liveData[key] = newData[key];
-                        }
-                    } catch (e) {}
+                    node.setAttribute('x-data', value);
+                    Alpine.destroyTree(node);
+                    Alpine.initTree(node);
                 }
                 pendingXDataUpdates = [];
             }
