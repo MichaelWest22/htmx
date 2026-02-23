@@ -478,6 +478,32 @@ describe('hx-alpine-compat extension', function() {
         assert.equal(div.querySelector('#target2')?.textContent, 'Moved');
     })
 
+    it('x-for reactive effect is revived by extension after outerMorph when x-data changes', async function () {
+        mockResponse('GET', '/test', '<div id="target" hx-get="/test" hx-swap="outerMorph" x-data="{ items: [\'a\', \'b\'] }"><ul><template x-for="item in items"><li x-text="item"></li></template></ul></div>');
+
+        const div = createProcessedHTML(
+            '<div id="target" hx-get="/test" hx-swap="outerMorph" x-data="{ items: [\'a\'] }">' +
+            '  <ul><template x-for="item in items"><li x-text="item"></li></template></ul>' +
+            '</div>'
+        );
+
+        await htmx.timeout(50);
+        assert.equal(div.querySelectorAll('li').length, 1);
+
+        div.click();
+        await forRequest();
+        await htmx.timeout(20);
+
+        const target = document.getElementById('target');
+
+        // Extension revives the effect — x-for should now respond to data changes
+        assert.equal(target.querySelectorAll('li').length, 2, 'x-for rendered new x-data after morph');
+
+        Alpine.$data(target).items.push('c');
+        await htmx.timeout(50);
+        assert.equal(target.querySelectorAll('li').length, 3, 'x-for effect is alive after extension revival');
+    })
+
     it('updates x-for list when x-data errors array changes via outerMorph', async function () {
         mockResponse('GET', '/form/', '<div id="target" hx-get="/form/" hx-target="#target" hx-swap="outerMorph" x-data="{ errors: [\'field is required\', \'too short\'] }"><input type="text"><ul><template x-for="error in errors"><li x-text="error"></li></template></ul></div>');
 

@@ -8,7 +8,7 @@
 (() => {
     let api;
     let deferCount = 0;
-    let pendingXDataUpdates = [];
+    let deferredReinits = [];
 
     htmx.registerExtension('alpine-compat', {
         init: (internalAPI) => {
@@ -62,8 +62,7 @@
             // then apply the real value after morph so Alpine re-evaluates reactively.
             if (oldNode.hasAttribute?.('x-data') && newNode.hasAttribute?.('x-data') &&
                 oldNode.getAttribute('x-data') !== newNode.getAttribute('x-data')) {
-                pendingXDataUpdates.push({ node: oldNode, value: newNode.getAttribute('x-data') });
-                newNode.setAttribute('x-data', oldNode.getAttribute('x-data'));
+                deferredReinits.push(oldNode);
             }
             
             // skip cloneNode for template children that will have errors as they can not have reactive content 
@@ -85,14 +84,13 @@
             }
             if (deferCount === 0 && window.Alpine?.flushAndStopDeferringMutations) {
                 window.Alpine.flushAndStopDeferringMutations();
-                // Apply deferred x-data updates by mutating live reactive data directly
-                for (let {node, value} of pendingXDataUpdates) {
+                // Apply x-data updates by re-initializing Alpine on affected nodes
+                for (let node of deferredReinits) {
                     if (!node.isConnected) continue;
-                    node.setAttribute('x-data', value);
                     Alpine.destroyTree(node);
                     Alpine.initTree(node);
                 }
-                pendingXDataUpdates = [];
+                deferredReinits = [];
             }
         }
     });
