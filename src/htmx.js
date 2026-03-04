@@ -368,11 +368,11 @@ var htmx = (() => {
             if (configAttr) {
                 this.__mergeConfig(configAttr, ctx.request);
                 if (ctx.request.etag) {
-                    this.__ensureHtmxInternalProp(sourceElement).etag ||= ctx.request.etag
+                    sourceElement._htmxEtag ||= ctx.request.etag;
                 }
             }
-            if (sourceElement._htmx?.etag) {
-                ctx.request.headers["If-none-match"] = sourceElement._htmx.etag
+            if (sourceElement._htmxEtag) {
+                ctx.request.headers["If-none-match"] = sourceElement._htmxEtag
             }
             return ctx;
         }
@@ -605,7 +605,7 @@ var htmx = (() => {
                 return true // TODO this seems legit
             }
             if(ctx.response?.headers?.get?.("Etag")) {
-                this.__ensureHtmxInternalProp(ctx.sourceElement).etag = ctx.response.headers.get("Etag");
+                ctx.sourceElement._htmxEtag = ctx.response.headers.get("Etag");
             }
         }
 
@@ -977,6 +977,7 @@ var htmx = (() => {
                     listenerInfo.fromElt.removeEventListener(listenerInfo.eventName, listenerInfo.handler);
                 }
                 this.__trigger(elt, "htmx:after:cleanup")
+                delete elt._htmx;
             }
             if (elt.firstChild) {
                 for (let child of elt.querySelectorAll('[data-htmx-powered]')) {
@@ -1544,7 +1545,7 @@ var htmx = (() => {
         __initHistoryHandling() {
             if (!this.config.history) return;
             if (!history.state) {
-                history.replaceState({htmx: true}, '', location.pathname + location.search + location.hash);
+                history.replaceState({htmx: true}, '', location.href);
             }
             window.addEventListener('popstate', (event) => {
                 if (event.state && event.state.htmx) {
@@ -2082,18 +2083,21 @@ var htmx = (() => {
 
         __copyAttributes(destination, source) {
             let attributesToIgnore = this.config.morphIgnore || [];
+            let prefix = this.__prefix("hx-");
             for (const attr of source.attributes) {
                 if (!attributesToIgnore.includes(attr.name) && destination.getAttribute(attr.name) !== attr.value) {
                     destination.setAttribute(attr.name, attr.value);
                     if (attr.name === "value" && destination instanceof HTMLInputElement && destination.type !== "file") {
                         destination.value = attr.value;
                     }
+                    if (attr.name.startsWith(prefix)) this.__cleanup(destination);
                 }
             }
             for (let i = destination.attributes.length - 1; i >= 0; i--) {
                 let attr = destination.attributes[i];
                 if (attr && !source.hasAttribute(attr.name) && !attributesToIgnore.includes(attr.name)) {
                     destination.removeAttribute(attr.name);
+                    if (attr.name.startsWith(prefix)) this.__cleanup(destination);
                 }
             }
         }
