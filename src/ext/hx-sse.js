@@ -283,16 +283,22 @@
     // ELEMENT PROCESSING
     // ========================================
 
-    function processElement(element) {
+    function connectElement(element) {
+        if (element._htmx?.sse) return; // already set up
         let connectUrl = api.attributeValue(element, 'hx-sse:connect');
         if (!connectUrl) return;
-        if (element._htmx?.sse) return; // already set up
-
         let specString = api.attributeValue(element, 'hx-trigger') || 'load';
         api.onTrigger(element, specString, () => {
             if (element._htmx?.sse) return; // prevent duplicate connections
             htmx.ajax('GET', connectUrl, {source: element});
         });
+    }
+
+    function processElement(root) {
+        let mc = htmx.config.metaCharacter || ':';
+        let attr = CSS.escape((htmx.config.prefix || 'hx-') + 'sse' + mc + 'connect');
+        connectElement(root);
+        root.querySelectorAll(`[${attr}]`).forEach(connectElement);
     }
 
     // ========================================
@@ -320,6 +326,7 @@
     htmx.registerExtension('sse', {
         init: (internalAPI) => {
             api = internalAPI;
+            processElement(document.body);
         },
 
         // Intercept SSE responses before core consumes the body
@@ -338,9 +345,6 @@
 
         htmx_after_process: (element) => {
             processElement(element);
-            let mc = htmx.config.metaCharacter || ':';
-            let attr = CSS.escape((htmx.config.prefix || 'hx-') + 'sse' + mc + 'connect');
-            element.querySelectorAll(`[${attr}]`).forEach(processElement);
         },
 
         htmx_before_cleanup: (element) => {

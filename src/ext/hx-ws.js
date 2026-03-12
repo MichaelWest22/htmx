@@ -671,6 +671,20 @@
         }
     }
     
+    function connectNode(node) {
+        checkLegacyAttributes(node);
+        if (hasWsAttribute(node, 'connect')) initializeElement(node);
+        if (hasWsAttribute(node, 'send')) initializeSendElement(node);
+    }
+
+    function processElement(root) {
+        connectNode(root);
+        let connectSelector = buildWsSelector('connect');
+        let sendSelector = buildWsSelector('send');
+        let plainAttr = buildAttrName('');
+        root.querySelectorAll(`${connectSelector},${sendSelector},[${plainAttr}],[ws-connect],[ws-send]`).forEach(connectNode);
+    }
+
     // ========================================
     // EXTENSION REGISTRATION
     // ========================================
@@ -683,34 +697,12 @@
             if (!htmx.config.websockets) {
                 htmx.config.websockets = {};
             }
+
+            processElement(document.body);
         },
         
         htmx_after_process: (element) => {
-            const processNode = (node) => {
-                // Check for legacy attributes
-                checkLegacyAttributes(node);
-                
-                // Initialize WebSocket connection elements (check both variants)
-                if (hasWsAttribute(node, 'connect')) {
-                    initializeElement(node);
-                }
-                
-                // Initialize send elements (check both variants)
-                if (hasWsAttribute(node, 'send')) {
-                    initializeSendElement(node);
-                }
-            };
-
-            // Process the element itself
-            processNode(element);
-            
-            // Process descendants - build proper selector respecting prefix
-            let connectSelector = buildWsSelector('connect');
-            let sendSelector = buildWsSelector('send');
-            let plainAttr = buildAttrName('');
-            let fullSelector = `${connectSelector},${sendSelector},[${plainAttr}],[ws-connect],[ws-send]`;
-            
-            element.querySelectorAll(fullSelector).forEach(processNode);
+            processElement(element);
         },
         
         htmx_before_cleanup: (element) => {
