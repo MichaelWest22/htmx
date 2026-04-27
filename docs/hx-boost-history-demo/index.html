@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Home - htmx4 Boost + History Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="htmx.js"></script>
+    <script src="hx-history-cache.js"></script>
+    <script src="hx-alpine-compat.js"></script>
+    <script src="hx-preload.js"></script>
+    <script src="hx-upsert.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.11/dist/cdn.min.js"></script>
+    <script src="demo.js"></script>
+</head>
+<body hx-boost:inherited='target:"main" select:"main" swap:"innerHTML strip:true show:none"'>
+    <div class="instructions">
+        <h3>🎯 htmx4 Real Demo: hx-boost + hx-history-elt + Extensions</h3>
+        <p><strong>What to test:</strong></p>
+        <ol>
+            <li><strong>Boosted Navigation:</strong> Click nav links - only main content updates, sidebar/header/footer stay stable</li>
+            <li><strong>Preloading:</strong> Hover over nav links - watch Network tab for preload requests</li>
+            <li><strong>History Cache:</strong> Navigate then use back/forward - instant cached responses</li>
+            <li><strong>History Restore:</strong> Use browser back/forward - surgical updates to main content only</li>
+            <li><strong>State Preservation:</strong> Sidebar counter keeps incrementing across navigation</li>
+            <li><strong>Real Requests:</strong> No mocking - actual HTML files being fetched</li>
+            <li><strong>Progressive Enhancement:</strong> Disable JavaScript - links still work (full page loads)</li>
+        </ol>
+        <p><strong>Key htmx4 features:</strong> <code>hx-boost:inherited</code> with <code>innerHTML strip:true show:none</code>, <code>hx-history-elt</code>, <code>hx-preload</code>, extensions auto-loaded</p>
+    </div>
+
+    <header>
+        <h1>🚀 htmx4 Real Demo</h1>
+        <div class="header-stats">
+            Page loads: <span id="page-loads">1</span> | 
+            Last updated: <span id="last-update">--</span> |
+            <span class="htmx-indicator">
+                <span class="loading-spinner"></span> Loading...
+            </span>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-links" hx-preload:inherited="mouseover">
+                <li><a href="index.html" class="active">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <h3>📊 Sidebar</h3>
+            <p><em>This sidebar stays stable during navigation!</em></p>
+            
+            <div class="sidebar-stats">
+                Interactions: <span id="interaction-count">0</span><br>
+                Status: <span style="color: #27ae60;">Active</span><br>
+                Last nav: <span id="last-nav">--</span>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="#dashboard">📊 Dashboard</a></li>
+                <li><a href="#analytics">📈 Analytics</a></li>
+                <li><a href="#settings">⚙️ Settings</a></li>
+                <li><a href="#help">❓ Help</a></li>
+            </ul>
+            
+            <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; font-size: 0.9rem;">
+                <strong>💡 Notice:</strong> This counter increments on every navigation, proving the sidebar state is preserved across page changes.
+            </div>
+        </aside>
+
+        <main hx-history-elt>
+            <h2>🏠 Welcome Home</h2>
+            <div class="page-content">
+                <p>This is the <strong>home page</strong> of our htmx4 real demo. Notice how the header, navigation, sidebar, and footer remain completely stable while only this main content area updates.</p>
+                
+                <div class="demo-info">
+                    <h4>🎯 What's happening here:</h4>
+                    <ul>
+                        <li><code>hx-boost:inherited</code> on body converts all links to AJAX</li>
+                        <li><code>hx-history-elt</code> on main ensures only this area swaps during history navigation</li>
+                        <li>Advanced boost config: <code>target:"main" select:"main" swap:"innerHTML strip:true show:none"</code></li>
+                        <li>Server returns real HTML files - no mocking needed!</li>
+                        <li><strong>Key:</strong> <code>innerHTML strip:true</code> removes outer element, <code>show:none</code> prevents scrolling</li>
+                    </ul>
+                </div>
+                
+                <p>Try navigating to different pages using the navigation above, then use your browser's back/forward buttons. Watch how smoothly everything works with real HTTP requests!</p>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="about.html" class="btn">Learn More About Us</a>
+                <a href="products.html" class="btn secondary">Browse Products</a>
+                <a href="contact.html" class="btn success">Get In Touch</a>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 htmx Demo Company. Built with ❤️ and htmx4.</p>
+        <div class="footer-stats">
+            Server time: <span id="server-time">--</span> | 
+            Total requests: <span id="request-count">0</span> |
+            Response type: <span id="response-type">Initial Load</span>
+        </div>
+    </footer>
+</body>
+</html>

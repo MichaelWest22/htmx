@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Products - htmx4 Boost + History Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="htmx.js"></script>
+    <script src="hx-history-cache.js"></script>
+    <script src="hx-alpine-compat.js"></script>
+    <script src="hx-preload.js"></script>
+    <script src="hx-upsert.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.11/dist/cdn.min.js"></script>
+    <script src="demo.js"></script>
+</head>
+<body hx-boost:inherited='target:"main" select:"main" swap:"innerHTML strip:true show:none"'>
+    <div class="instructions">
+        <h3>🎯 htmx4 Real Demo: hx-boost + hx-history-elt</h3>
+        <p><strong>What to test:</strong></p>
+        <ol>
+            <li><strong>Boosted Navigation:</strong> Click nav links - only main content updates, sidebar/header/footer stay stable</li>
+            <li><strong>History Restore:</strong> Use browser back/forward - surgical updates to main content only</li>
+            <li><strong>State Preservation:</strong> Sidebar counter keeps incrementing across navigation</li>
+            <li><strong>Real Requests:</strong> No mocking - actual HTML files being fetched</li>
+            <li><strong>Progressive Enhancement:</strong> Disable JavaScript - links still work (full page loads)</li>
+        </ol>
+        <p><strong>Key htmx4 features:</strong> <code>hx-boost:inherited</code> on body with <code>innerHTML strip:true show:none</code>, <code>hx-history-elt</code> for surgical history updates</p>
+    </div>
+
+    <header>
+        <h1>🚀 htmx4 Real Demo</h1>
+        <div class="header-stats">
+            Page loads: <span id="page-loads">1</span> | 
+            Last updated: <span id="last-update">--</span> |
+            <span class="htmx-indicator">
+                <span class="loading-spinner"></span> Loading...
+            </span>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-links" hx-preload:inherited="mouseover">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="products.html" class="active">Products</a></li>
+                <li><a href="contact.html">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <h3>📊 Sidebar</h3>
+            <p><em>This sidebar stays stable during navigation!</em></p>
+            
+            <div class="sidebar-stats">
+                Interactions: <span id="interaction-count">0</span><br>
+                Status: <span style="color: #27ae60;">Active</span><br>
+                Last nav: <span id="last-nav">--</span>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="#dashboard">📊 Dashboard</a></li>
+                <li><a href="#analytics">📈 Analytics</a></li>
+                <li><a href="#settings">⚙️ Settings</a></li>
+                <li><a href="#help">❓ Help</a></li>
+            </ul>
+            
+            <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; font-size: 0.9rem;">
+                <strong>💡 Notice:</strong> This counter increments on every navigation, proving the sidebar state is preserved across page changes.
+            </div>
+        </aside>
+
+        <main hx-history-elt>
+            <div x-data="{
+                selectedCategory: 'all',
+                searchTerm: '',
+                cartItems: 0,
+                products: [
+                    { id: 1, name: 'htmx Pro', category: 'software', price: 99, description: 'Advanced htmx features for enterprise applications' },
+                    { id: 2, name: 'htmx Cloud', category: 'hosting', price: 199, description: 'Hosted htmx infrastructure with global CDN' },
+                    { id: 3, name: 'htmx Training', category: 'education', price: 299, description: 'Comprehensive training courses' },
+                    { id: 4, name: 'htmx T-Shirt', category: 'merchandise', price: 25, description: 'Show your htmx love!' },
+                    { id: 5, name: 'HATEOAS Mug', category: 'merchandise', price: 15, description: 'Coffee tastes better with REST' },
+                    { id: 6, name: 'htmx Stickers', category: 'merchandise', price: 8, description: 'Decorate your laptop' }
+                ],
+                get filteredProducts() {
+                    return this.products.filter(product => {
+                        const matchesCategory = this.selectedCategory === 'all' || product.category === this.selectedCategory;
+                        const matchesSearch = product.name.toLowerCase().includes(this.searchTerm.toLowerCase());
+                        return matchesCategory && matchesSearch;
+                    });
+                },
+                addToCart(product) {
+                    this.cartItems++;
+                    console.log('Added to cart:', product.name, '| Total items:', this.cartItems);
+                }
+            }">
+                <h2>🛒 Interactive Products (Alpine.js)</h2>
+                
+                <div style="display: flex; gap: 1rem; margin: 1rem 0; flex-wrap: wrap; align-items: center; padding: 1rem; background: #f8f9fa; border-radius: 8px;">
+                    <div>
+                        <label style="font-weight: bold;">Category:</label>
+                        <select x-model="selectedCategory" style="margin-left: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px;">
+                            <option value="all">All Products</option>
+                            <option value="software">Software</option>
+                            <option value="hosting">Hosting</option>
+                            <option value="education">Education</option>
+                            <option value="merchandise">Merchandise</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label style="font-weight: bold;">Search:</label>
+                        <input x-model="searchTerm" type="text" placeholder="Search products..." 
+                               style="margin-left: 0.5rem; padding: 0.5rem; border: 1px solid #ddd; border-radius: 4px; width: 200px;">
+                    </div>
+                    
+                    <div style="margin-left: auto; font-weight: bold; color: #27ae60; font-size: 1.1rem;">
+                        🛒 Cart: <span x-text="cartItems"></span> items
+                    </div>
+                </div>
+                
+                <div class="page-content">
+                    <div class="demo-info">
+                        <h4>🎯 Alpine.js + htmx4 Integration:</h4>
+                        <ul>
+                            <li><code>x-data</code> - Reactive component state with products array</li>
+                            <li><code>x-model</code> - Two-way binding for category select and search input</li>
+                            <li><code>x-text</code> - Dynamic text updates for cart counter</li>
+                            <li><code>x-for</code> - Dynamic product list rendering with filtering</li>
+                            <li><code>get filteredProducts()</code> - Computed property for real-time filtering</li>
+                            <li><code>@click</code> - Event handling for add to cart (check console)</li>
+                            <li><strong>State persists</strong> during htmx navigation thanks to alpine-compat!</li>
+                        </ul>
+                    </div>
+                </div>
+                
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1.5rem; margin: 1.5rem 0;">
+                    <template x-for="product in filteredProducts" :key="product.id">
+                        <div style="border: 2px solid #ecf0f1; border-radius: 8px; padding: 1.5rem; background: white; box-shadow: 0 2px 8px rgba(0,0,0,0.1); transition: transform 0.2s;" 
+                             @mouseenter="$el.style.transform='translateY(-2px)'" 
+                             @mouseleave="$el.style.transform='translateY(0)'">
+                            <h4 x-text="product.name" style="margin: 0 0 0.5rem 0; color: #3498db;"></h4>
+                            <p x-text="product.description" style="color: #666; margin: 0.5rem 0; min-height: 2.5rem;"></p>
+                            <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 1rem;">
+                                <span style="font-weight: bold; color: #27ae60; font-size: 1.2rem;">$<span x-text="product.price"></span></span>
+                                <button @click="addToCart(product)" 
+                                        style="background: #3498db; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 6px; cursor: pointer; font-weight: bold; transition: background 0.2s;"
+                                        @mouseenter="$el.style.background='#2980b9'" 
+                                        @mouseleave="$el.style.background='#3498db'">
+                                    Add to Cart
+                                </button>
+                            </div>
+                            <div style="margin-top: 0.75rem; font-size: 0.85rem; color: #888; text-transform: capitalize; padding: 0.25rem 0.5rem; background: #f8f9fa; border-radius: 4px; display: inline-block;">
+                                <span x-text="product.category"></span>
+                            </div>
+                        </div>
+                    </template>
+                </div>
+                
+                <div x-show="filteredProducts.length === 0" style="text-align: center; padding: 3rem; color: #666; background: #f8f9fa; border-radius: 8px; margin: 2rem 0;">
+                    <h3>🔍 No products found</h3>
+                    <p>Try adjusting your category or search filters!</p>
+                </div>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="index.html" class="btn">Back to Home</a>
+                <a href="contact.html" class="btn secondary">Contact Sales</a>
+            </div>
+        </main>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 htmx Demo Company. Built with ❤️ and htmx4.</p>
+        <div class="footer-stats">
+            Server time: <span id="server-time">--</span> | 
+            Total requests: <span id="request-count">0</span> |
+            Response type: <span id="response-type">Initial Load</span>
+        </div>
+    </footer>
+</body>
+</html>

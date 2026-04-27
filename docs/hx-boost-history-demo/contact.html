@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Contact - htmx4 Boost + History Demo</title>
+    <link rel="stylesheet" href="styles.css">
+    <script src="htmx.js"></script>
+    <script src="hx-history-cache.js"></script>
+    <script src="hx-alpine-compat.js"></script>
+    <script src="hx-preload.js"></script>
+    <script src="hx-upsert.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.15.11/dist/cdn.min.js"></script>
+    <script src="demo.js"></script>
+</head>
+<body hx-boost:inherited='target:"main" select:"main" swap:"innerHTML strip:true show:none"'>
+    <div class="instructions">
+        <h3>🎯 htmx4 Real Demo: hx-boost + hx-history-elt</h3>
+        <p><strong>What to test:</strong></p>
+        <ol>
+            <li><strong>Boosted Navigation:</strong> Click nav links - only main content updates, sidebar/header/footer stay stable</li>
+            <li><strong>History Restore:</strong> Use browser back/forward - surgical updates to main content only</li>
+            <li><strong>State Preservation:</strong> Sidebar counter keeps incrementing across navigation</li>
+            <li><strong>Real Requests:</strong> No mocking - actual HTML files being fetched</li>
+            <li><strong>Progressive Enhancement:</strong> Disable JavaScript - links still work (full page loads)</li>
+        </ol>
+        <p><strong>Key htmx4 features:</strong> <code>hx-boost:inherited</code> on body with <code>innerHTML strip:true show:none</code>, <code>hx-history-elt</code> for surgical history updates</p>
+    </div>
+
+    <header>
+        <h1>🚀 htmx4 Real Demo</h1>
+        <div class="header-stats">
+            Page loads: <span id="page-loads">1</span> | 
+            Last updated: <span id="last-update">--</span> |
+            <span class="htmx-indicator">
+                <span class="loading-spinner"></span> Loading...
+            </span>
+        </div>
+    </header>
+
+    <nav>
+        <div class="nav-container">
+            <ul class="nav-links" hx-preload:inherited="mouseover">
+                <li><a href="index.html">Home</a></li>
+                <li><a href="about.html">About</a></li>
+                <li><a href="products.html">Products</a></li>
+                <li><a href="contact.html" class="active">Contact</a></li>
+            </ul>
+        </div>
+    </nav>
+
+    <div class="container">
+        <aside class="sidebar">
+            <h3>📊 Sidebar</h3>
+            <p><em>This sidebar stays stable during navigation!</em></p>
+            
+            <div class="sidebar-stats">
+                Interactions: <span id="interaction-count">0</span><br>
+                Status: <span style="color: #27ae60;">Active</span><br>
+                Last nav: <span id="last-nav">--</span>
+            </div>
+            
+            <ul class="sidebar-menu">
+                <li><a href="#dashboard">📊 Dashboard</a></li>
+                <li><a href="#analytics">📈 Analytics</a></li>
+                <li><a href="#settings">⚙️ Settings</a></li>
+                <li><a href="#help">❓ Help</a></li>
+            </ul>
+            
+            <div style="margin-top: 1rem; padding: 1rem; background: #f8f9fa; border-radius: 4px; font-size: 0.9rem;">
+                <strong>💡 Notice:</strong> This counter increments on every navigation, proving the sidebar state is preserved across page changes.
+            </div>
+        </aside>
+
+        <main hx-history-elt>
+            <h2>💬 Live Chat Support</h2>
+            
+            <div class="page-content">
+                <div class="demo-info">
+                    <h4>🎯 htmx4 Upsert Extension Demo:</h4>
+                    <ul>
+                        <li><code>&lt;hx-partial&gt;</code> tags - Four partials: user message, input clear, typing indicator, final response</li>
+                        <li><code>scroll:bottom</code> - Auto-scroll chat container to bottom after each message</li>
+                        <li><code>hx-target="#chat-input" hx-swap="outerHTML"</code> - Server-side input clearing immediately</li>
+                        <li><code>hx-swap="upsert key:data-date sort"</code> - User message appears immediately</li>
+                        <li><code>hx-swap="upsert key:data-date sort swap:2s"</code> - "typing..." indicator after 2 seconds</li>
+                        <li><code>hx-swap="upsert key:data-date sort swap:4s"</code> - Real response overwrites typing indicator</li>
+                        <li><strong>Same message ID</strong> - Bot typing and response use same ID for upsert replacement</li>
+                        <li><strong>Fetch mocking</strong> - Simulates real chat API with user + bot responses</li>
+                        <li><strong>Timestamp sorting</strong> - Messages ordered by data-date attribute, newest first</li>
+                        <li><strong>Real-time updates</strong> - Messages upsert seamlessly without full refresh</li>
+                        <li><strong>State preservation</strong> - Chat history persists during navigation</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="chat-container" style="border: 2px solid #ecf0f1; border-radius: 12px; background: white; max-width: 600px; margin: 2rem auto;">
+                <div class="chat-header" style="background: #3498db; color: white; padding: 1rem; border-radius: 10px 10px 0 0; text-align: center; font-weight: bold;">
+                    💬 htmx Support Chat
+                </div>
+                
+                <div id="chat-messages" class="chat-messages" style="height: 400px; overflow-y: auto; padding: 1rem; background: #f8f9fa;">
+                    <div class="system-message" style="text-align: center; color: #666; font-style: italic; margin-bottom: 1rem; padding: 1rem; background: #fff; border-radius: 8px; border: 1px dashed #ddd;">
+                        👋 Welcome to htmx support! Type a message below to start chatting.
+                    </div>
+                </div>
+                
+                <form hx-post="/api/chat" 
+                      hx-target="#chat-messages" 
+                      hx-swap="upsert key:data-date sort"
+                      hx-sync="replace"
+                      hx-on::before-request="this.querySelector('button').disabled = true; this.querySelector('button').textContent = 'Sending...'"
+                      hx-on::after-request="this.querySelector('button').disabled = false; this.querySelector('button').textContent = 'Send'"
+                      style="display: flex; padding: 1rem; border-top: 1px solid #ddd; background: white; border-radius: 0 0 10px 10px;">
+                    <input name="message" 
+                           id="chat-input"
+                           type="text" 
+                           placeholder="Type your message..." 
+                           required
+                           style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px 0 0 6px; outline: none;"
+                           autocomplete="off">
+                    <button type="submit" 
+                            style="background: #27ae60; color: white; border: none; padding: 0.75rem 1.5rem; border-radius: 0 6px 6px 0; cursor: pointer; font-weight: bold;">
+                        Send
+                    </button>
+                </form>
+            </div>
+            
+            <div class="action-buttons">
+                <a href="index.html" class="btn">Back to Home</a>
+                <a href="about.html" class="btn secondary">Learn More</a>
+            </div>
+        </main>
+        
+        <script>
+            // Mock fetch for chat endpoint
+            let messageCounter = 0;
+            const originalFetch = window.fetch;
+            window.fetch = function(url, options) {
+                if (url === '/api/chat' && options?.method === 'POST') {
+                    return new Promise((resolve) => {
+                        console.log('Mock fetch called with:', { url, options });
+                        
+                        let userMessage = 'Hello!';
+                        
+                        // Handle different body formats
+                        if (options.body instanceof FormData) {
+                            console.log('Body is FormData');
+                            userMessage = options.body.get('message') || 'Hello!';
+                        } else if (typeof options.body === 'string') {
+                            console.log('Body is string:', options.body);
+                            const params = new URLSearchParams(options.body);
+                            userMessage = params.get('message') || 'Hello!';
+                        } else if (options.body instanceof URLSearchParams) {
+                            console.log('Body is URLSearchParams:', options.body);
+                            userMessage = options.body.get('message') || 'Hello!';
+                        } else if (options.body) {
+                            console.log('Body is other type:', typeof options.body, options.body);
+                            // Try to extract from URLSearchParams if it has the method
+                            if (options.body.get) {
+                                userMessage = options.body.get('message') || 'Hello!';
+                            }
+                        }
+                        
+                        console.log('Extracted user message:', userMessage);
+                        
+                        const now = new Date();
+                        const userTimestamp = now.toISOString();
+                        const botTimestamp = new Date(now.getTime() + 2000).toISOString();
+                        
+                        const userMessageId = `message_${++messageCounter}`;
+                        const botMessageId = `message_${++messageCounter}`;
+                        
+                        const mockResponses = [
+                            'Thanks for reaching out! How can I help you today?',
+                            'That\'s a great question about htmx! Let me explain...',
+                            'I understand your concern. Here\'s what I recommend:',
+                            'Absolutely! htmx makes that really easy to implement.',
+                            'Have you tried checking the htmx documentation for that feature?',
+                            'That\'s exactly what the upsert extension is perfect for!',
+                            'Great point! The alpine-compat extension handles that seamlessly.',
+                            'I\'d be happy to help you troubleshoot that htmx issue.',
+                            'That\'s a common pattern in htmx applications. Here\'s how:',
+                            'Perfect! You\'re really getting the hang of htmx development.',
+                            'The upsert extension is working beautifully here, isn\'t it?',
+                            'Notice how the messages stay sorted by timestamp automatically!'
+                        ];
+                        
+                        const botResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+                        
+                        const responseHtml = `
+                            <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort scroll:bottom">
+                                <div id="${userMessageId}" class="message user-message" data-date="${userTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+                                    <div style="background: #3498db; color: white; padding: 0.75rem 1rem; border-radius: 18px 18px 4px 18px; max-width: 70%; word-wrap: break-word;">
+                                        <div style="font-weight: 500;">${userMessage}</div>
+                                        <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">${now.toLocaleTimeString()}</div>
+                                    </div>
+                                </div>
+                            </hx-partial>
+                            
+                            <hx-partial hx-target="#chat-input" hx-swap="outerHTML">
+                                <input name="message" 
+                                       id="chat-input"
+                                       type="text" 
+                                       placeholder="Type your message..." 
+                                       required
+                                       autofocus
+                                       style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px 0 0 6px; outline: none;"
+                                       autocomplete="off">
+                            </hx-partial>
+                            
+                            <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort swap:2s scroll:bottom">
+                                <div id="${botMessageId}" class="message bot-message" data-date="${botTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-start;">
+                                    <div style="background: #ecf0f1; color: #333; padding: 0.75rem 1rem; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;">
+                                        <div style="font-weight: 500;">🤖 <span style="opacity: 0.6; font-style: italic;">typing...</span></div>
+                                        <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.25rem;">${new Date(botTimestamp).toLocaleTimeString()}</div>
+                                    </div>
+                                </div>
+                            </hx-partial>
+                            
+                            <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort swap:4s scroll:bottom">
+                                <div id="${botMessageId}" class="message bot-message" data-date="${botTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-start;">
+                                    <div style="background: #ecf0f1; color: #333; padding: 0.75rem 1rem; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;">
+                                        <div style="font-weight: 500;">🤖 ${botResponse}</div>
+                                        <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.25rem;">${new Date(botTimestamp).toLocaleTimeString()}</div>
+                                    </div>
+                                </div>
+                            </hx-partial>
+                        `;
+                        
+                        console.log('Returning response HTML:', responseHtml);
+                        
+                        setTimeout(() => {
+                            resolve({
+                                ok: true,
+                                status: 200,
+                                text: () => Promise.resolve(responseHtml),
+                                headers: new Headers({
+                                    'Content-Type': 'text/html'
+                                })
+                            });
+                        }, 800); // Simulate network delay
+                    });
+                }
+                return originalFetch.apply(this, arguments);
+            };
+        </script>
+    </div>
+
+    <footer>
+        <p>&copy; 2024 htmx Demo Company. Built with ❤️ and htmx4.</p>
+        <div class="footer-stats">
+            Server time: <span id="server-time">--</span> | 
+            Total requests: <span id="request-count">0</span> |
+            Response type: <span id="response-type">Initial Load</span>
+        </div>
+    </footer>
+</body>
+</html>
