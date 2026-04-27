@@ -20,21 +20,28 @@ function updateActiveNavLink() {
 
 // Update page load counter
 function updatePageLoads() {
-    document.getElementById('page-loads').textContent = ++pageLoads;
-    document.getElementById('last-update').textContent = new Date().toLocaleTimeString();
+    const pageLoadsEl = document.getElementById('page-loads');
+    const lastUpdateEl = document.getElementById('last-update');
+    if (pageLoadsEl) pageLoadsEl.textContent = ++pageLoads;
+    if (lastUpdateEl) lastUpdateEl.textContent = new Date().toLocaleTimeString();
 }
 
 // Update interaction counter (preserves sidebar state)
 function updateInteractionCount() {
-    document.getElementById('interaction-count').textContent = ++interactionCount;
-    document.getElementById('last-nav').textContent = new Date().toLocaleTimeString();
+    const interactionCountEl = document.getElementById('interaction-count');
+    const lastNavEl = document.getElementById('last-nav');
+    if (interactionCountEl) interactionCountEl.textContent = ++interactionCount;
+    if (lastNavEl) lastNavEl.textContent = new Date().toLocaleTimeString();
 }
 
 // Update server stats
 function updateServerStats(responseType) {
-    document.getElementById('server-time').textContent = new Date().toISOString();
-    document.getElementById('request-count').textContent = ++requestCount;
-    document.getElementById('response-type').textContent = responseType;
+    const serverTimeEl = document.getElementById('server-time');
+    const requestCountEl = document.getElementById('request-count');
+    const responseTypeEl = document.getElementById('response-type');
+    if (serverTimeEl) serverTimeEl.textContent = new Date().toISOString();
+    if (requestCountEl) requestCountEl.textContent = ++requestCount;
+    if (responseTypeEl) responseTypeEl.textContent = responseType;
 }
 
 // Track htmx events
@@ -81,5 +88,6 @@ window.addEventListener('popstate', () => {
 // Simulate some initial interactions
 setTimeout(() => {
     interactionCount = Math.floor(Math.random() * 20) + 10;
-    document.getElementById('interaction-count').textContent = interactionCount;
+    const interactionCountEl = document.getElementById('interaction-count');
+    if (interactionCountEl) interactionCountEl.textContent = interactionCount;
 }, 100);
