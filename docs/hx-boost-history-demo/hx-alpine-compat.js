@@ -90,7 +90,24 @@
             document.querySelectorAll('[data-alpine-state]').forEach(el => {
                 let saved = JSON.parse(el.getAttribute('data-alpine-state'));
                 el.removeAttribute('data-alpine-state');
-                if (el._x_dataStack) Object.assign(el._x_dataStack[0], saved);
+                if (el._x_dataStack) {
+                    // Safely restore state, skipping getters and non-configurable properties
+                    let target = el._x_dataStack[0];
+                    for (let key in saved) {
+                        try {
+                            // Check if property exists and is configurable
+                            let descriptor = Object.getOwnPropertyDescriptor(target, key);
+                            if (!descriptor || descriptor.configurable !== false) {
+                                // Skip getters (computed properties)
+                                if (!descriptor || !descriptor.get) {
+                                    target[key] = saved[key];
+                                }
+                            }
+                        } catch (e) {
+                            // Silently skip properties that can't be set
+                        }
+                    }
+                }
             });
         },
 
