@@ -130,121 +130,125 @@
                 <a href="index.html" class="btn">Back to Home</a>
                 <a href="about.html" class="btn secondary">Learn More</a>
             </div>
-        </main>
-        
-        <script>
-            // Mock fetch for chat endpoint
-            let messageCounter = 0;
-            const originalFetch = window.fetch;
-            window.fetch = function(url, options) {
-                if (url === '/api/chat' && options?.method === 'POST') {
-                    return new Promise((resolve) => {
-                        console.log('Mock fetch called with:', { url, options });
-                        
-                        let userMessage = 'Hello!';
-                        
-                        // Handle different body formats
-                        if (options.body instanceof FormData) {
-                            console.log('Body is FormData');
-                            userMessage = options.body.get('message') || 'Hello!';
-                        } else if (typeof options.body === 'string') {
-                            console.log('Body is string:', options.body);
-                            const params = new URLSearchParams(options.body);
-                            userMessage = params.get('message') || 'Hello!';
-                        } else if (options.body instanceof URLSearchParams) {
-                            console.log('Body is URLSearchParams:', options.body);
-                            userMessage = options.body.get('message') || 'Hello!';
-                        } else if (options.body) {
-                            console.log('Body is other type:', typeof options.body, options.body);
-                            // Try to extract from URLSearchParams if it has the method
-                            if (options.body.get) {
-                                userMessage = options.body.get('message') || 'Hello!';
-                            }
-                        }
-                        
-                        console.log('Extracted user message:', userMessage);
-                        
-                        const now = new Date();
-                        const userTimestamp = now.toISOString();
-                        const botTimestamp = new Date(now.getTime() + 2000).toISOString();
-                        
-                        const userMessageId = `message_${++messageCounter}`;
-                        const botMessageId = `message_${++messageCounter}`;
-                        
-                        const mockResponses = [
-                            'Thanks for reaching out! How can I help you today?',
-                            'That\'s a great question about htmx! Let me explain...',
-                            'I understand your concern. Here\'s what I recommend:',
-                            'Absolutely! htmx makes that really easy to implement.',
-                            'Have you tried checking the htmx documentation for that feature?',
-                            'That\'s exactly what the upsert extension is perfect for!',
-                            'Great point! The alpine-compat extension handles that seamlessly.',
-                            'I\'d be happy to help you troubleshoot that htmx issue.',
-                            'That\'s a common pattern in htmx applications. Here\'s how:',
-                            'Perfect! You\'re really getting the hang of htmx development.',
-                            'The upsert extension is working beautifully here, isn\'t it?',
-                            'Notice how the messages stay sorted by timestamp automatically!'
-                        ];
-                        
-                        const botResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
-                        
-                        const responseHtml = `
-                            <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort scroll:bottom">
-                                <div id="${userMessageId}" class="message user-message" data-date="${userTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
-                                    <div style="background: #3498db; color: white; padding: 0.75rem 1rem; border-radius: 18px 18px 4px 18px; max-width: 70%; word-wrap: break-word;">
-                                        <div style="font-weight: 500;">${userMessage}</div>
-                                        <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">${now.toLocaleTimeString()}</div>
-                                    </div>
-                                </div>
-                            </hx-partial>
-                            
-                            <hx-partial hx-target="#chat-input" hx-swap="outerHTML">
-                                <input name="message" 
-                                       id="chat-input"
-                                       type="text" 
-                                       placeholder="Type your message..." 
-                                       required
-                                       autofocus
-                                       style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px 0 0 6px; outline: none;"
-                                       autocomplete="off">
-                            </hx-partial>
-                            
-                            <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort swap:2s scroll:bottom">
-                                <div id="${botMessageId}" class="message bot-message" data-date="${botTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-start;">
-                                    <div style="background: #ecf0f1; color: #333; padding: 0.75rem 1rem; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;">
-                                        <div style="font-weight: 500;">🤖 <span style="opacity: 0.6; font-style: italic;">typing...</span></div>
-                                        <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.25rem;">${new Date(botTimestamp).toLocaleTimeString()}</div>
-                                    </div>
-                                </div>
-                            </hx-partial>
-                            
-                            <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort swap:4s scroll:bottom">
-                                <div id="${botMessageId}" class="message bot-message" data-date="${botTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-start;">
-                                    <div style="background: #ecf0f1; color: #333; padding: 0.75rem 1rem; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;">
-                                        <div style="font-weight: 500;">🤖 ${botResponse}</div>
-                                        <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.25rem;">${new Date(botTimestamp).toLocaleTimeString()}</div>
-                                    </div>
-                                </div>
-                            </hx-partial>
-                        `;
-                        
-                        console.log('Returning response HTML:', responseHtml);
-                        
-                        setTimeout(() => {
-                            resolve({
-                                ok: true,
-                                status: 200,
-                                text: () => Promise.resolve(responseHtml),
-                                headers: new Headers({
-                                    'Content-Type': 'text/html'
-                                })
+            
+            <script>
+                // Mock fetch for chat endpoint - safe to run multiple times
+                if (!window.chatMockInstalled) {
+                    window.chatMockInstalled = true;
+                    let messageCounter = 0;
+                    const originalFetch = window.fetch;
+                    
+                    window.fetch = function(url, options) {
+                        if (url === '/api/chat' && options?.method === 'POST') {
+                            return new Promise((resolve) => {
+                                console.log('Mock fetch called with:', { url, options });
+                                
+                                let userMessage = 'Hello!';
+                                
+                                // Handle different body formats
+                                if (options.body instanceof FormData) {
+                                    console.log('Body is FormData');
+                                    userMessage = options.body.get('message') || 'Hello!';
+                                } else if (typeof options.body === 'string') {
+                                    console.log('Body is string:', options.body);
+                                    const params = new URLSearchParams(options.body);
+                                    userMessage = params.get('message') || 'Hello!';
+                                } else if (options.body instanceof URLSearchParams) {
+                                    console.log('Body is URLSearchParams:', options.body);
+                                    userMessage = options.body.get('message') || 'Hello!';
+                                } else if (options.body) {
+                                    console.log('Body is other type:', typeof options.body, options.body);
+                                    // Try to extract from URLSearchParams if it has the method
+                                    if (options.body.get) {
+                                        userMessage = options.body.get('message') || 'Hello!';
+                                    }
+                                }
+                                
+                                console.log('Extracted user message:', userMessage);
+                                
+                                const now = new Date();
+                                const userTimestamp = now.toISOString();
+                                const botTimestamp = new Date(now.getTime() + 2000).toISOString();
+                                
+                                const userMessageId = `message_${++messageCounter}`;
+                                const botMessageId = `message_${++messageCounter}`;
+                                
+                                const mockResponses = [
+                                    'Thanks for reaching out! How can I help you today?',
+                                    'That\'s a great question about htmx! Let me explain...',
+                                    'I understand your concern. Here\'s what I recommend:',
+                                    'Absolutely! htmx makes that really easy to implement.',
+                                    'Have you tried checking the htmx documentation for that feature?',
+                                    'That\'s exactly what the upsert extension is perfect for!',
+                                    'Great point! The alpine-compat extension handles that seamlessly.',
+                                    'I\'d be happy to help you troubleshoot that htmx issue.',
+                                    'That\'s a common pattern in htmx applications. Here\'s how:',
+                                    'Perfect! You\'re really getting the hang of htmx development.',
+                                    'The upsert extension is working beautifully here, isn\'t it?',
+                                    'Notice how the messages stay sorted by timestamp automatically!'
+                                ];
+                                
+                                const botResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+                                
+                                const responseHtml = `
+                                    <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort scroll:bottom">
+                                        <div id="${userMessageId}" class="message user-message" data-date="${userTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-end;">
+                                            <div style="background: #3498db; color: white; padding: 0.75rem 1rem; border-radius: 18px 18px 4px 18px; max-width: 70%; word-wrap: break-word;">
+                                                <div style="font-weight: 500;">${userMessage}</div>
+                                                <div style="font-size: 0.75rem; opacity: 0.8; margin-top: 0.25rem;">${now.toLocaleTimeString()}</div>
+                                            </div>
+                                        </div>
+                                    </hx-partial>
+                                    
+                                    <hx-partial hx-target="#chat-input" hx-swap="outerHTML">
+                                        <input name="message" 
+                                               id="chat-input"
+                                               type="text" 
+                                               placeholder="Type your message..." 
+                                               required
+                                               autofocus
+                                               style="flex: 1; padding: 0.75rem; border: 1px solid #ddd; border-radius: 6px 0 0 6px; outline: none;"
+                                               autocomplete="off">
+                                    </hx-partial>
+                                    
+                                    <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort swap:2s scroll:bottom">
+                                        <div id="${botMessageId}" class="message bot-message" data-date="${botTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-start;">
+                                            <div style="background: #ecf0f1; color: #333; padding: 0.75rem 1rem; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;">
+                                                <div style="font-weight: 500;">🤖 <span style="opacity: 0.6; font-style: italic;">typing...</span></div>
+                                                <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.25rem;">${new Date(botTimestamp).toLocaleTimeString()}</div>
+                                            </div>
+                                        </div>
+                                    </hx-partial>
+                                    
+                                    <hx-partial hx-target="#chat-messages" hx-swap="upsert key:data-date sort swap:4s scroll:bottom">
+                                        <div id="${botMessageId}" class="message bot-message" data-date="${botTimestamp}" style="margin-bottom: 1rem; display: flex; justify-content: flex-start;">
+                                            <div style="background: #ecf0f1; color: #333; padding: 0.75rem 1rem; border-radius: 18px 18px 18px 4px; max-width: 70%; word-wrap: break-word;">
+                                                <div style="font-weight: 500;">🤖 ${botResponse}</div>
+                                                <div style="font-size: 0.75rem; opacity: 0.6; margin-top: 0.25rem;">${new Date(botTimestamp).toLocaleTimeString()}</div>
+                                            </div>
+                                        </div>
+                                    </hx-partial>
+                                `;
+                                
+                                console.log('Returning response HTML:', responseHtml);
+                                
+                                setTimeout(() => {
+                                    resolve({
+                                        ok: true,
+                                        status: 200,
+                                        text: () => Promise.resolve(responseHtml),
+                                        headers: new Headers({
+                                            'Content-Type': 'text/html'
+                                        })
+                                    });
+                                }, 800); // Simulate network delay
                             });
-                        }, 800); // Simulate network delay
-                    });
+                        }
+                        return originalFetch.apply(this, arguments);
+                    };
                 }
-                return originalFetch.apply(this, arguments);
-            };
-        </script>
+            </script>
+        </main>
     </div>
 
     <footer>
