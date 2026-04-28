@@ -73,8 +73,8 @@ var htmx = (() => {
         constructor() {
             this.#initHtmxConfig();
             this.#initRequestIndicatorCss();
-            this.#actionSelector = `[${this.#prefix("hx-action")}],[${this.#prefix("hx-get")}],[${this.#prefix("hx-post")}],[${this.#prefix("hx-put")}],[${this.#prefix("hx-patch")}],[${this.#prefix("hx-delete")}]`;
-            this.#hxOnQuery = new XPathEvaluator().createExpression(`.//*[@*[ starts-with(name(), "${this.#prefix("hx-on")}")]]`);
+            this.#actionSelector = this.#prefixSelector('[hx-action],[hx-get],[hx-post],[hx-put],[hx-patch],[hx-delete]');
+            this.#hxOnQuery = new XPathEvaluator().createExpression(`.//*[@*[${this.#prefixes("hx-on").map(p => `starts-with(name(), "${p}")`).join(' or ')}]]`);
             this.#internalAPI = {
                 attributeValue: this.#attributeValue.bind(this),
                 parseTriggerSpecs: this.#parseTriggerSpecs.bind(this),
@@ -105,7 +105,7 @@ var htmx = (() => {
             this.version = '4.0.0-beta2'
             this.config = {
                 logAll: false,
-                prefix: "",
+                prefix: "data-hx-",
                 transitions: false,
                 history: true,
                 mode: 'same-origin',
@@ -131,17 +131,14 @@ var htmx = (() => {
 
         #initRequestIndicatorCss() {
             if (this.config.includeIndicatorCSS !== false) {
-                let nonceAttribute = "";
-                if (this.config.inlineStyleNonce) {
-                    nonceAttribute = ` nonce="${this.config.inlineStyleNonce}"`;
-                }
-                let indicator = this.config.indicatorClass
-                let request = this.config.requestClass
-                document.head.insertAdjacentHTML('beforeend', `<style${nonceAttribute}>` +
+                let indicator = this.config.indicatorClass;
+                let request = this.config.requestClass;
+                let sheet = new CSSStyleSheet();
+                sheet.replaceSync(
                     `.${indicator}{opacity:0;visibility: hidden} ` +
-                    `.${request} .${indicator}, .${request}.${indicator}{opacity:1;visibility: visible;transition: opacity 200ms ease-in}` +
-                    '</style>'
-                )
+                    `.${request} .${indicator}, .${request}.${indicator}{opacity:1;visibility: visible;transition: opacity 200ms ease-in}`
+                );
+                document.adoptedStyleSheets = [...document.adoptedStyleSheets, sheet];
             }
         }
 
@@ -156,11 +153,28 @@ var htmx = (() => {
         }
 
         #ignore(elt) {
-            return !elt.closest || elt.closest(`[${this.#prefix("hx-ignore")}]`) != null
+            let p = this.config.prefix;
+            return !elt.closest || elt.closest('[hx-ignore]') != null || (p && elt.closest(`[${p}ignore]`) != null);
         }
 
-        #prefix(s) {
-            return this.config.prefix ? s.replace('hx-', this.config.prefix) : s;
+        #attr(elt, name) {
+            let p = this.config.prefix;
+            return elt.getAttribute(name) ?? (p ? elt.getAttribute(name.replace('hx-', p)) : null);
+        }
+
+        #attrName(elt, name) {
+            let p = this.config.prefix && name.replace('hx-', this.config.prefix);
+            return elt.hasAttribute(name) ? name : (p && elt.hasAttribute(p) ? p : null);
+        }
+
+        #prefixSelector(s) {
+            return this.#prefixes(s).join(',');
+        }
+
+        #prefixes(s) {
+            let result = [s];
+            if (this.config.prefix) result.push(s.replaceAll('hx-', this.config.prefix));
+            return result;
         }
 
         #queryEltAndDescendants(elt, selector) {
@@ -187,38 +201,30 @@ var htmx = (() => {
         }
 
         #attributeValue(elt, name, defaultVal, eltCollector) {
-            let unprefixed = name;
-            name = this.#maybeAdjustMetaCharacter(this.#prefix(name));
-            let appendName = name + this.#maybeAdjustMetaCharacter(":append");
-            let inheritName = name + (this.config.implicitInheritance ? "" : this.#maybeAdjustMetaCharacter(":inherited"));
-            let inheritAppendName = name + this.#maybeAdjustMetaCharacter(":inherited:append");
+            let inherited = this.#maybeAdjustMetaCharacter(":inherited");
+            let append = this.#maybeAdjustMetaCharacter(":append");
 
-            if (elt.hasAttribute(name)) {
-                let val = elt.getAttribute(name);
-                return eltCollector ? eltCollector(val, elt) : val;
-            }
+            let val = this.#attr(elt, name) ?? this.#attr(elt, name + inherited);
+            if (val != null) return eltCollector ? eltCollector(val, elt) : val;
 
-            if (elt.hasAttribute(inheritName)) {
-                let val = elt.getAttribute(inheritName);
-                return eltCollector ? eltCollector(val, elt) : val;
-            }
-
-            if (elt.hasAttribute(appendName) || elt.hasAttribute(inheritAppendName)) {
-                let appendValue = elt.getAttribute(appendName) || elt.getAttribute(inheritAppendName);
-                let parent = elt.parentNode?.closest?.(`[${CSS.escape(inheritName)}],[${CSS.escape(inheritAppendName)}]`);
-                if (eltCollector) {
-                    eltCollector(appendValue, elt);
-                }
+            let n1 = CSS.escape(this.config.implicitInheritance ? name : name + inherited);
+            let n2 = CSS.escape(name + inherited + append);
+            let inheritSelector = this.#prefixSelector(`[${n1}],[${n2}]`);
+            let appendName = this.#attrName(elt, name + append) ?? this.#attrName(elt, name + inherited + append);
+            if (appendName) {
+                let appendValue = elt.getAttribute(appendName);
+                let parent = elt.parentNode?.closest?.(inheritSelector);
+                if (eltCollector) eltCollector(appendValue, elt);
                 if (parent) {
-                    let inherited = this.#attributeValue(parent, unprefixed, undefined, eltCollector);
-                    return inherited ? (inherited + "," + appendValue).replace(/[{}]/g, '') : appendValue;
+                    let parentVal = this.#attributeValue(parent, name, undefined, eltCollector);
+                    return parentVal ? (parentVal + "," + appendValue).replace(/[{}]/g, '') : appendValue;
                 }
                 return appendValue;
             }
 
-            let parent = elt.parentNode?.closest?.(`[${CSS.escape(inheritName)}],[${CSS.escape(inheritAppendName)}]`);
+            let parent = elt.parentNode?.closest?.(inheritSelector);
             if (parent) {
-                let val = this.#attributeValue(parent, unprefixed, undefined, eltCollector);
+                val = this.#attributeValue(parent, name, undefined, eltCollector);
                 if (!eltCollector && val && this.config.implicitInheritance) {
                     this.#triggerExtensions(elt, "htmx:after:implicitInheritance", {elt, name, parent})
                 }
@@ -536,6 +542,10 @@ var htmx = (() => {
                 if (!this.#trigger(elt, "htmx:before:response", {ctx})) return;
                 ctx.text = await response.text();
                 if (!this.#trigger(elt, "htmx:after:request", {ctx})) return;
+
+                if (ctx.response.status >= 400) {
+                    this.#trigger(elt, "htmx:response:error", {ctx})
+                }
 
                 if(this.#handleHeadersAndMaybeReturnEarly(ctx)){
                     ctx.keepIndicators = true;
@@ -982,9 +992,9 @@ var htmx = (() => {
 
         #handlePreservedElements(fragment) {
             let pantry = document.createElement('div');
-            pantry.style.display = 'none';
+            pantry.hidden = true;
             document.body.insertAdjacentElement('afterend', pantry);
-            let newPreservedElts = fragment.querySelectorAll?.(`[${this.#prefix('hx-preserve')}]`) || [];
+            let newPreservedElts = fragment.querySelectorAll?.(this.#prefixSelector('[hx-preserve]')) || [];
             for (let preservedElt of newPreservedElts) {
                 let currentElt = document.getElementById(preservedElt.id);
                 if (currentElt) {
@@ -1079,12 +1089,12 @@ var htmx = (() => {
             }
 
             // Process elements with hx-swap-oob attribute
-            for (let oobElt of fragment.querySelectorAll(`[${this.#prefix('hx-swap-oob')}]`)) {
-                let oobValue = oobElt.getAttribute(this.#prefix('hx-swap-oob'));
-                oobElt.removeAttribute(this.#prefix('hx-swap-oob'));
+            for (let oobElt of fragment.querySelectorAll(this.#prefixSelector('[hx-swap-oob]'))) {
+                let oobAttr = this.#attrName(oobElt, 'hx-swap-oob');
+                let oobValue = oobElt.getAttribute(oobAttr);
+                oobElt.removeAttribute(oobAttr);
                 this.#createOOBTask(tasks, oobElt, oobValue, sourceElement);
             }
-
             return tasks;
         }
 
@@ -1114,10 +1124,10 @@ var htmx = (() => {
                 let type = templateElt.getAttribute('type');
                 
                 if (type === 'partial') {
-                    let targetSelector = templateElt.getAttribute(this.#prefix('hx-target')) || (templateElt.id ? '#' + CSS.escape(templateElt.id) : null);
+                    let targetSelector = this.#attr(templateElt, 'hx-target') || (templateElt.id ? '#' + CSS.escape(templateElt.id) : null);
                     if (targetSelector) {
                         this.#processScripts(templateElt.content);
-                        let swapSpec = this.#parseSwapSpec(templateElt.getAttribute(this.#prefix('hx-swap')) || this.config.defaultSwap);
+                        let swapSpec = this.#parseSwapSpec(this.#attr(templateElt, 'hx-swap') || this.config.defaultSwap);
                         for (let target of document.querySelectorAll(targetSelector)) {
                             tasks.push({
                                 type: 'partial',
@@ -1317,7 +1327,7 @@ var htmx = (() => {
             let pantry = this.#handlePreservedElements(fragment);
             let newContent = [...fragment.childNodes]
             try {
-                if (swapStyle === 'innerHTML') {
+                if (swapStyle === 'innerHTML' || (swapStyle === 'outerHTML' && target === document.body)) {
                     for (const child of target.children) {
                         this.#cleanup(child)
                     }
@@ -1575,14 +1585,17 @@ var htmx = (() => {
 
         #restoreHistory(path) {
             path = path || location.pathname + location.search;
+            let historyElt = document.querySelector(this.#prefixSelector('[hx-history-elt]')) || document.body;
             if (this.#trigger(document, "htmx:before:history:restore", {path, cacheMiss: true})) {
                 if (this.config.history === "reload") {
                     location.reload();
                 } else {
                     this.#historyAbort = new AbortController();
+                    let isPartialTarget = historyElt !== document.body;
                     this.ajax('GET', path, {
-                        target: 'body',
-                        swap: 'innerHTML',
+                        target: historyElt,
+                        swap: `innerHTML${isPartialTarget ? ' strip:true' : ''}`,
+                        select: isPartialTarget ? this.#prefixSelector('[hx-history-elt]') : undefined,
                         request: {
                             headers: {'HX-History-Restore-Request': 'true'},
                             signal: this.#historyAbort.signal
@@ -1645,9 +1658,10 @@ var htmx = (() => {
         // hx-on:<event> binds to <event> directly
         // hx-on::<event> is shorthand for hx-on:htmx:<event> (htmx events)
         #handleHxOnAttributes(node) {
-            let searchString = this.#maybeAdjustMetaCharacter(this.#prefix("hx-on:"));
+            let searchStrings = this.#prefixes("hx-on:").map(p => this.#maybeAdjustMetaCharacter(p));
             for (let attr of node.getAttributeNames()) {
-                if (attr.startsWith(searchString)) {
+                let searchString = searchStrings.find(s => attr.startsWith(s));
+                if (searchString) {
                     let evtName = attr.substring(searchString.length)
                     let mc = this.config.metaCharacter || ':';
                     if (evtName.startsWith(mc)) evtName = 'htmx' + evtName
