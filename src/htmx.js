@@ -1667,8 +1667,10 @@ var htmx = (() => {
                             console.error(e);
                         }
                     };
-                    node.addEventListener(evtName, handler);
-                    this.__htmxProp(node).listeners.push({fromElt: node, eventName: evtName, handler});
+                    if (this.__trigger(node, 'htmx:before:on:listener', {handler, evtName, node})) {
+                        node.addEventListener(evtName, handler);
+                        this.__htmxProp(node).listeners.push({fromElt: node, eventName: evtName, handler});
+                    }
                 }
             }
         }
