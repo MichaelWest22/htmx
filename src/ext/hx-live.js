@@ -98,6 +98,16 @@
         }
     }
 
+    function toEltList(x, cls) {
+        return x == null ? [] : typeof x === 'string' ? [...document.querySelectorAll(x)] : x.nodeType ? [x, ...(cls ? x.querySelectorAll('.' + cls) : [])] : [...x];
+    }
+
+    function takeClass(target, className, source) {
+        let targets = toEltList(target);
+        toEltList(source ?? targets[0]?.parentElement, className).forEach(e => e.classList?.remove(className));
+        targets.forEach(e => htmx.takeClass(e, className, e.parentElement));
+    }
+
     function makeDebounce() {
         // Channels keyed by fn.toString() for the closure form; null for the promise form.
         // Promise-form cancellation works by rejecting the awaiting async — no callsite key needed.
@@ -201,7 +211,7 @@
                 };
                 if (p === 'trigger') return (t, d, b) => { elts.forEach(e => htmx.trigger(e, t, d, b)); return proxy; };
                 if (p === 'insert') return (pos, s) => { elts.forEach(e => e.insertAdjacentHTML(positions[pos], s)); return proxy; };
-                if (p === 'take') return (cls, from) => { htmx.takeClass(elts, cls, from); return proxy; };
+                if (p === 'take') return (cls, from) => { takeClass(elts, cls, from); return proxy; };
                 if (p === 'toggle') return (...specs) => { elts.forEach(e => specs.forEach(s => applyToggle(s, e))); return proxy; };
                 if (arrayMethods.has(p)) return elts[p].bind(elts);
                 let v = elts[0]?.[p];
@@ -270,11 +280,24 @@
             Object.assign(detail.scope, {
                 q: makeQ(elt),
                 timeout: t => htmx.timeout(t),
-                forEvent: (...args) => htmx.forEvent(elt, ...args),
-                nextFrame: () => htmx.nextFrame(),
+                forEvent: (...args) => {
+                    let target = elt;
+                    for (let a of args) if (a?.nodeType) target = a;
+                    return new Promise(resolve => {
+                        let cleanups = [], done = false;
+                        let fire = v => { if (done) return; done = true; for (let c of cleanups) c(); resolve(v); };
+                        for (let a of args) {
+                            if (a == null || a?.nodeType) continue;
+                            let ms = typeof a === 'number' ? a : (typeof a === 'string' ? htmx.parseInterval(a) : undefined);
+                            if (ms !== undefined && ms > 0) { let id = setTimeout(() => fire(a), ms); cleanups.push(() => clearTimeout(id)); }
+                            else if (typeof a === 'string') { let h = evt => fire(evt); target.addEventListener(a, h, {once: true}); cleanups.push(() => target.removeEventListener(a, h)); }
+                        }
+                    });
+                },
+                nextFrame: () => new Promise(resolve => requestAnimationFrame(resolve)),
                 trigger: (type, detail, bubbles) => htmx.trigger(elt, type, detail, bubbles),
                 debounce: getDebounce(elt),
-                take: (cls, source) => htmx.takeClass(elt, cls, source),
+                take: (cls, source) => takeClass(elt, cls, source),
                 toggle: (...specs) => specs.forEach(s => applyToggle(s, elt))
             });
         }

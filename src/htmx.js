@@ -1466,43 +1466,18 @@ var htmx = (() => {
             }
         }
 
-        // Returns a Promise that resolves when any of the supplied events fires or any of the supplied
-        // timeouts elapses, whichever happens first. Args are variadic and order-independent:
-        //   - element                            → listener target (last wins; default document)
-        //   - number                             → timeout in ms
-        //   - string parseable as interval (e.g. '500ms', '1s', '5m')   → timeout
-        //   - other string                       → event name
-        // Resolves to the event object (for events) or to the original arg (for timeouts), so callers can
-        // discriminate which input won the race.
-        forEvent(...args) {
-            let target = document;
-            for (let a of args) if (a?.nodeType) target = a;
+        forEvent(event, timeout, on = document) {
             return new Promise(resolve => {
-                let cleanups = [], done = false;
-                let fire = v => {
-                    if (done) return;
-                    done = true;
-                    for (let c of cleanups) c();
-                    resolve(v);
+                let handler = (evt) => {
+                    clearTimeout(timeoutId);
+                    resolve(evt);
                 };
-                for (let a of args) {
-                    if (a == null || a?.nodeType) continue;
-                    let ms = typeof a === 'number' ? a
-                        : (typeof a === 'string' ? this.parseInterval(a) : undefined);
-                    if (ms !== undefined && ms > 0) {
-                        let id = setTimeout(() => fire(a), ms);
-                        cleanups.push(() => clearTimeout(id));
-                    } else if (typeof a === 'string') {
-                        let h = evt => fire(evt);
-                        target.addEventListener(a, h, { once: true });
-                        cleanups.push(() => target.removeEventListener(a, h));
-                    }
-                }
-            });
-        }
-
-        nextFrame() {
-            return new Promise(resolve => requestAnimationFrame(resolve));
+                let timeoutId = timeout && setTimeout(() => {
+                    on.removeEventListener(event, handler);
+                    resolve(null);
+                }, timeout);
+                on.addEventListener(event, handler, {once: true});
+            })
         }
 
         onLoad(callback) {
@@ -1531,20 +1506,10 @@ var htmx = (() => {
             else                                  target(prefix);
         }
 
-        // Adds className to every element in `target`; strips it from every element in `source`.
-        // target/source accept: an element, a selector string (resolved via findAll),
-        // or any iterable of elements (NodeList, Array, q() proxy, etc.).
-        // If source is a single element, it expands to the element + its descendants matching .className —
-        // so `takeClass(button, 'active')` (default source = button.parentElement) drains 'active' from the
-        // surrounding subtree, then adds it to button.
-        takeClass(target, className, source) {
-            let targets = this.__toEltList(target);
-            if (source === undefined) source = targets[0]?.parentElement;
-            let sources = (source && source.nodeType && source.querySelectorAll)
-                ? [source, ...source.querySelectorAll('.' + className)]
-                : this.__toEltList(source);
-            for (let elt of sources) this.__removeClass(elt, className);
-            for (let elt of targets) this.__addClass(elt, className);
+        takeClass(elt, className, source = elt.parentElement) {
+            for (let e of (source?.querySelectorAll ? [source, ...source.querySelectorAll('.' + className)] : [source]))
+                this.__removeClass(e, className);
+            this.__addClass(elt, className);
         }
 
         on(eventOrElt, eventOrCallback, callback) {
@@ -1723,29 +1688,28 @@ var htmx = (() => {
             this.__trigger(document, "htmx:after:history:update", historyDetail);
         }
 
-        // hx-on:<event> binds to <event> directly
+                // hx-on:<event> binds to <event> directly
         // hx-on::<event> is shorthand for hx-on:htmx:<event> (htmx events)
         // Modifiers (dot-separated): .prevent .stop .halt .once .self .outside .capture .passive .cc
         __handleHxOnAttributes(node) {
-            let searchStrings = this.__prefixes("hx-on:").map(p => this.__maybeAdjustMetaCharacter(p));
-            let mc = this.config.metaCharacter || ':';
+            let mc = this.__maybeAdjustMetaCharacter(':');
+            let searchStrings = this.__prefixes(`hx-on${mc}`);
             for (let attr of node.getAttributeNames()) {
                 let searchString = searchStrings.find(s => attr.startsWith(s));
                 if (!searchString) continue;
-                let [evtName, ...mods] = attr.substring(searchString.length).split('.');
-                let has = m => mods.includes(m);
+                let [evtName, ...modList] = attr.substring(searchString.length).split('.');
+                let mod = Object.fromEntries(modList.map(m => [m, true]));
                 if (evtName.startsWith(mc)) evtName = 'htmx' + evtName;
-                if (has('cc')) evtName = evtName.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
+                if (mod.cc) evtName = evtName.replace(/-([a-z])/g, (_, c) => c.toUpperCase());
                 let code = node.getAttribute(attr);
-                let target = has('outside') ? document : node;
-                let opts = { capture: has('capture'), passive: has('passive') };
-                let halt = has('halt');
+                let target = mod.outside ? document : node;
+                let opts = { capture: mod.capture, passive: mod.passive };
                 let handler = async (evt) => {
-                    if (has('self') && evt.target !== node) return;
-                    if (has('outside') && node.contains(evt.target)) return;
-                    if (halt || has('prevent')) evt.preventDefault();
-                    if (halt || has('stop')) evt.stopPropagation();
-                    if (has('once')) target.removeEventListener(evtName, handler, opts);
+                    if (mod.self && evt.target !== node) return;
+                    if (mod.outside && node.contains(evt.target)) return;
+                    if (mod.halt || mod.prevent) evt.preventDefault();
+                    if (mod.halt || mod.stop) evt.stopPropagation();
+                    if (mod.once) target.removeEventListener(evtName, handler, opts);
                     try {
                         await this.__executeJavaScript(node, { event: evt },
                             `with(event?.detail||{}){${code}}`, false);
@@ -2318,14 +2282,6 @@ var htmx = (() => {
                 }
             }
             return restoreTasks;
-        }
-
-        __toEltList(x) {
-            if (x == null) return [];
-            if (typeof x === 'string') return [...this.findAll(x)];
-            if (x.nodeType) return [x];
-            if (Symbol.iterator in Object(x)) return [...x];
-            return [];
         }
 
         __addClass(elt, cls) {
