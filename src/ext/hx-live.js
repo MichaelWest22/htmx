@@ -176,6 +176,7 @@
 
     function makeQ(ctx, defaultRoot = document) {
         return selectorOrElt => {
+            if (selectorOrElt == null) selectorOrElt = ctx;
             if (typeof selectorOrElt !== 'string') {
                 return qProxy(
                     selectorOrElt?.nodeType ? [selectorOrElt] : [...(selectorOrElt || [])]
@@ -327,7 +328,8 @@
                 trigger: (type, detail, bubbles) => htmx.trigger(elt, type, detail, bubbles),
                 debounce: getDebounce(elt),
                 take: (cls, source) => applyTake([elt], cls, source),
-                toggle: (...specs) => specs.forEach(s => applyToggle(s, elt))
+                toggle: (...specs) => specs.forEach(s => applyToggle(s, elt)),
+                d: sel => makeQ(elt)(sel).arr()[0]?.dataset ?? {}
             });
         }
     });
