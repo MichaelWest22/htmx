@@ -108,10 +108,11 @@ _Note: `revealed` always observes the browser viewport. For scrollable container
 
 Fires when an element becomes visible in the viewport.
 
-Uses the [IntersectionObserver API](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/IntersectionObserver#options) and supports [`root`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/root) and [`threshold`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/thresholds) as modifiers.
+Uses the [IntersectionObserver API](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/IntersectionObserver#options) and supports [`root`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/root), [`rootMargin`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/rootMargin), and [`threshold`](https://developer.mozilla.org/en-US/docs/Web/API/IntersectionObserver/thresholds) as modifiers.
 
 ```html
 <div hx-on="intersect once -> this.classList.add('in-view')">
+<div hx-on="intersect rootMargin:100px -> this.classList.add('near')">
 ```
 
 ### `every <time>`

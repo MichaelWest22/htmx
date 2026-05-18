@@ -771,7 +771,7 @@ var htmx = (() => {
 
                 // Intersect/revealed: set up observer
                 if (eventName === 'intersect' || eventName === 'revealed') {
-                    let observerOptions = {};
+                    let observerOptions = {rootMargin: spec.rootMargin};
                     if (spec.root) observerOptions.root = this.__findOrWarn(elt, spec.root);
                     if (spec.threshold) observerOptions.threshold = parseFloat(spec.threshold);
                     let isRevealed = eventName === 'revealed';
