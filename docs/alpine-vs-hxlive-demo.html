@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alpine.js vs hx-live — Side by Side</title>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@next/dist/htmx.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@next/dist/ext/hx-live.min.js"></script>
+    <style>
+        [x-cloak] { display: none !important; }
+        * { box-sizing: border-box; }
+        body { font-family: system-ui, sans-serif; margin: 0; padding: 1rem; }
+        h1 { text-align: center; margin-bottom: 2rem; }
+        .row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; margin-bottom: 1.5rem; }
+        .col { border: 1px solid #ddd; border-radius: 8px; padding: 1.25rem; }
+        .col h3 { margin: 0 0 0.75rem; font-size: 0.85rem; color: #666; text-transform: uppercase; letter-spacing: 0.05em; }
+        .row-title { font-weight: bold; font-size: 1.1rem; margin-bottom: 0.5rem; color: #333; }
+        button { cursor: pointer; padding: 0.4rem 0.8rem; }
+        input, select, textarea { padding: 0.3rem 0.5rem; }
+        .active { background: #3b82f6; color: white; }
+        .error { color: red; font-size: 0.85rem; }
+        .toast { background: #10b981; color: white; padding: 0.75rem 1rem; border-radius: 6px; display: flex; align-items: center; gap: 0.5rem; }
+        .dark-demo { padding: 0.5rem; border-radius: 4px; }
+        .dark-demo.dark { background: #1f2937; color: #f9fafb; }
+        dialog::backdrop { background: rgba(0,0,0,0.5); }
+        nav button { margin-right: 0.25rem; }
+        [hidden] {
+            transition: opacity 200ms, display 200ms allow-discrete;
+            opacity: 0;
+        }
+        section[hidden], p[hidden] {
+            transition: none;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button { -webkit-appearance: none; margin: 0; }
+        .counter-input { -moz-appearance: textfield; width: 50px; text-align: center; }
+    </style>
+</head>
+<body hx-ext="hx-live">
+
+<h1>Alpine.js vs hx-live — Side by Side</h1>
+
+<!-- 1. Toggle Visibility -->
+<div class="row-title">1. Toggle Visibility</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ open: false }">
+            <button @click="open = !open" x-text="open ? 'Hide' : 'Show'"></button>
+            <p x-show="open" x-transition>Hello! I'm visible now.</p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <button id="btn1" hx-live="this.textContent = q('#panel1').hidden ? 'Show' : 'Hide'"></button>
+        <p id="panel1" hidden hx-on="click from:#btn1 -> toggle('@hidden')">Hello! I'm visible now.</p>
+    </div>
+</div>
+
+<!-- 2. Dropdown Menu -->
+<div class="row-title">2. Dropdown Menu</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ open: false }" style="position:relative">
+            <button @click="open = !open">Menu ▾</button>
+            <ul x-show="open" @click.outside="open = false" style="position:absolute; background:white; border:1px solid #ccc; list-style:none; padding:0.5rem; margin:0.25rem 0; z-index:10;">
+                <li><a href="#">Profile</a></li>
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <div style="position:relative" hx-on="click from:outside -> q('ul in this').hidden = true">
+            <button hx-on:click="q('next ul').toggle('@hidden')">Menu ▾</button>
+            <ul hidden style="position:absolute; background:white; border:1px solid #ccc; list-style:none; padding:0.5rem; margin:0.25rem 0; z-index:10;">
+                <li><a href="#">Profile</a></li>
+                <li><a href="#">Settings</a></li>
+                <li><a href="#">Logout</a></li>
+            </ul>
+        </div>
+    </div>
+</div>
+
+<!-- 3. Tabs -->
+<div class="row-title">3. Tabs</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ tab: 'home' }">
+            <nav>
+                <button :class="{ active: tab === 'home' }" @click="tab = 'home'">Home</button>
+                <button :class="{ active: tab === 'about' }" @click="tab = 'about'">About</button>
+                <button :class="{ active: tab === 'contact' }" @click="tab = 'contact'">Contact</button>
+            </nav>
+            <div x-show="tab === 'home'">Welcome home.</div>
+            <div x-show="tab === 'about'">About us.</div>
+            <div x-show="tab === 'contact'">Get in touch.</div>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <div>
+            <nav hx-on:click="
+                let btn = event.target.closest('button');
+                if (!btn) return;
+                q(btn).take('active', this);
+                q(this.parentElement).q('section').hidden = true;
+                q('#' + btn.dataset.tab).hidden = false;
+            ">
+                <button class="active" data-tab="tab-home">Home</button>
+                <button data-tab="tab-about">About</button>
+                <button data-tab="tab-contact">Contact</button>
+            </nav>
+            <section id="tab-home">Welcome home.</section>
+            <section id="tab-about" hidden>About us.</section>
+            <section id="tab-contact" hidden>Get in touch.</section>
+        </div>
+    </div>
+</div>
+
+<!-- 4. Two-Way Binding -->
+<div class="row-title">4. Two-Way Binding</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ name: '' }">
+            <input x-model="name" placeholder="Type your name">
+            <p>Hello, <span x-text="name || '...'"></span>!</p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <input id="name4" placeholder="Type your name">
+        <p hx-live="this.textContent = 'Hello, ' + (q('#name4').value || '...') + '!'"></p>
+    </div>
+</div>
+
+<!-- 5. Counter -->
+<div class="row-title">5. Counter</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ count: 0 }">
+            <button @click="count--">−</button>
+            <span x-text="count" style="margin:0 0.5rem; font-size:1.2rem;"></span>
+            <button @click="count++">+</button>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <button hx-on:click="q('next input').stepDown()">−</button>
+        <input type="number" value="0" min="-99" max="99" class="counter-input">
+        <button hx-on:click="q('prev input').stepUp()">+</button>
+    </div>
+</div>
+
+<!-- 6. Conditional Rendering -->
+<div class="row-title">6. Conditional Rendering</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ loggedIn: false }">
+            <button @click="loggedIn = !loggedIn" x-text="loggedIn ? 'Log Out' : 'Log In'"></button>
+            <template x-if="loggedIn"><p>Welcome back, user!</p></template>
+            <template x-if="!loggedIn"><p>Please log in.</p></template>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <button id="auth6" hx-on:click="toggle('@data-logged-in=true|')"
+                hx-live="this.textContent = this.dataset.loggedIn ? 'Log Out' : 'Log In'"></button>
+        <p hx-live="this.hidden = !q('#auth6').dataset.loggedIn">Welcome back, user!</p>
+        <p hx-live="this.hidden = !!q('#auth6').dataset.loggedIn">Please log in.</p>
+    </div>
+</div>
+
+<!-- 7. Looping / Lists -->
+<div class="row-title">7. Looping / Lists</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ items: ['Apple', 'Banana', 'Cherry'], newItem: '' }">
+            <input x-model="newItem" @keydown.enter="if(newItem) { items.push(newItem); newItem = '' }" placeholder="Add item…">
+            <ul>
+                <template x-for="(item, i) in items" :key="i">
+                    <li><span x-text="item"></span> <button @click="items.splice(i, 1)">×</button></li>
+                </template>
+            </ul>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <input hx-on="keydown[key=='Enter'] ->
+            if (!this.value) return;
+            q('next ul').insert('end', '<li>' + this.value + ' <button onclick=&quot;this.parentElement.remove()&quot;>×</button></li>');
+            this.value = '';
+        " placeholder="Add item…">
+        <ul>
+            <li>Apple <button onclick="this.parentElement.remove()">×</button></li>
+            <li>Banana <button onclick="this.parentElement.remove()">×</button></li>
+            <li>Cherry <button onclick="this.parentElement.remove()">×</button></li>
+        </ul>
+    </div>
+</div>
+
+<!-- 8. Accordion -->
+<div class="row-title">8. Accordion</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ active: null }">
+            <div>
+                <button @click="active = active === 1 ? null : 1">Section 1</button>
+                <p x-show="active === 1" x-transition>Content for section 1.</p>
+            </div>
+            <div>
+                <button @click="active = active === 2 ? null : 2">Section 2</button>
+                <p x-show="active === 2" x-transition>Content for section 2.</p>
+            </div>
+            <div>
+                <button @click="active = active === 3 ? null : 3">Section 3</button>
+                <p x-show="active === 3" x-transition>Content for section 3.</p>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live (native &lt;details&gt;)</h3>
+        <details name="acc8" open>
+            <summary>Section 1</summary>
+            <p>Content for section 1.</p>
+        </details>
+        <details name="acc8">
+            <summary>Section 2</summary>
+            <p>Content for section 2.</p>
+        </details>
+        <details name="acc8">
+            <summary>Section 3</summary>
+            <p>Content for section 3.</p>
+        </details>
+    </div>
+</div>
+
+<!-- 9. Modal Dialog -->
+<div class="row-title">9. Modal Dialog</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ showModal: false }">
+            <button @click="showModal = true">Open Modal</button>
+            <template x-teleport="body">
+                <div x-show="showModal" x-transition style="position:fixed;inset:0;background:rgba(0,0,0,0.5);display:flex;align-items:center;justify-content:center;z-index:1000;" @click.self="showModal = false">
+                    <div style="background:white;padding:2rem;border-radius:8px;min-width:300px;">
+                        <h3>Modal Title</h3>
+                        <p>This is modal content.</p>
+                        <button @click="showModal = false">Close</button>
+                    </div>
+                </div>
+            </template>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live (native &lt;dialog&gt;)</h3>
+        <button hx-on:click="q('next dialog').showModal()">Open Modal</button>
+        <dialog hx-on:click="if (event.target === this) this.close()">
+            <h3>Modal Title</h3>
+            <p>This is modal content.</p>
+            <button hx-on:click="q('closest dialog').close()">Close</button>
+        </dialog>
+    </div>
+</div>
+
+<!-- 10. Fetch Data on Init -->
+<div class="row-title">10. Fetch Data on Init</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ user: null }" x-init="user = await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json()">
+            <template x-if="user">
+                <div>
+                    <p><strong x-text="user.name"></strong></p>
+                    <p x-text="user.email"></p>
+                </div>
+            </template>
+            <p x-show="!user">Loading…</p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live (hx-on:load)</h3>
+        <div hx-on:load="
+            let user = await (await fetch('https://jsonplaceholder.typicode.com/users/1')).json();
+            this.innerHTML = '<p><strong>' + user.name + '</strong></p><p>' + user.email + '</p>';
+        ">Loading…</div>
+    </div>
+</div>
+
+<!-- 11. Character Counter -->
+<div class="row-title">11. Character Counter</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ text: '' }">
+            <textarea x-model="text" maxlength="100" rows="2" style="width:100%"></textarea>
+            <p x-text="text.length + '/100'"></p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <textarea id="msg11" maxlength="100" rows="2" style="width:100%"></textarea>
+        <p hx-live="this.textContent = q('#msg11').value.length + '/100'"></p>
+    </div>
+</div>
+
+<!-- 12. Dark Mode Toggle -->
+<div class="row-title">12. Dark Mode Toggle</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ dark: false }" :class="{ dark: dark }" class="dark-demo">
+            <button @click="dark = !dark" x-text="dark ? '☀️ Light' : '🌙 Dark'"></button>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <div id="dark12" class="dark-demo">
+            <button hx-on:click="q('#dark12').toggle('.dark')"
+                    hx-live="this.textContent = q('#dark12').classList.contains('dark') ? '☀️ Light' : '🌙 Dark'"></button>
+        </div>
+    </div>
+</div>
+
+<!-- 13. Form Validation -->
+<div class="row-title">13. Form Validation</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ email: '', error: '' }">
+            <input x-model="email" @blur="error = email.includes('@') ? '' : 'Invalid email'" placeholder="Email">
+            <p x-show="error" x-text="error" class="error"></p>
+            <button :disabled="!!error || !email">Submit</button>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <input id="email13" hx-on="blur -> this.dataset.error = this.value.includes('@') ? '' : 'Invalid email'" placeholder="Email">
+        <p hx-live="let err = q('#email13').dataset.error; this.textContent = err; this.hidden = !err;" class="error"></p>
+        <button hx-live="this.disabled = !!q('#email13').dataset.error || !q('#email13').value">Submit</button>
+    </div>
+</div>
+
+<!-- 14. Debounced Search -->
+<div class="row-title">14. Debounced Search</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ query: '', result: '' }">
+            <input x-model.debounce.300ms="query" @input="result = query ? 'Results for: ' + query : ''">
+            <p x-text="result"></p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <input id="q14" placeholder="Search…">
+        <p hx-live="this.textContent = q('#q14').value ? 'Results for: ' + q('#q14').value : ''"></p>
+    </div>
+</div>
+
+<!-- 15. Toast / Notification -->
+<div class="row-title">15. Toast / Notification</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ show: false }">
+            <button @click="show = true; setTimeout(() => show = false, 3000)">Show Toast</button>
+            <div x-show="show" x-transition class="toast">
+                <span>Operation successful!</span>
+                <button @click="show = false" style="background:none;border:none;color:white;font-size:1.2rem;">×</button>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <button hx-on:click="
+            q('next div').insert('end', '<div class=toast hx-on=&quot;load delay:3s -> this.remove(); click target:button -> this.remove()&quot;><span>Operation successful!</span><button style=&quot;background:none;border:none;color:white;font-size:1.2rem;&quot;>×</button></div>');
+            htmx.process(q('next div').arr()[0].lastElementChild);
+        ">Show Toast</button>
+        <div></div>
+    </div>
+</div>
+
+<!-- 16. Password Visibility Toggle -->
+<div class="row-title">16. Password Visibility Toggle</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ show: false }">
+            <input :type="show ? 'text' : 'password'" value="secret123">
+            <button @click="show = !show" x-text="show ? 'Hide' : 'Show'"></button>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <input id="pw16" type="password" value="secret123">
+        <button hx-on:click="
+            let input = q('prev input');
+            input.type = input.type === 'password' ? 'text' : 'password';
+            this.textContent = input.type === 'password' ? 'Show' : 'Hide';
+        ">Show</button>
+    </div>
+</div>
+
+<!-- 17. Computed / Derived Values -->
+<div class="row-title">17. Computed / Derived Values</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ price: 10, qty: 1 }">
+            <label>Price: <input type="number" x-model.number="price" style="width:60px"></label>
+            <label>Qty: <input type="number" x-model.number="qty" style="width:60px"></label>
+            <p>Total: $<span x-text="(price * qty).toFixed(2)"></span></p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <label>Price: <input id="price17" type="number" value="10" style="width:60px"></label>
+        <label>Qty: <input id="qty17" type="number" value="1" style="width:60px"></label>
+        <p hx-live="this.textContent = 'Total: $' + (q('#price17').valueAsNumber * q('#qty17').valueAsNumber).toFixed(2)"></p>
+    </div>
+</div>
+
+<!-- 18. Scroll-to-Top Button -->
+<div class="row-title">18. Scroll-to-Top Button</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ atTop: true }" @scroll.window="atTop = window.scrollY < 100">
+            <p>Scroll down to see button (fixed, shared between both demos).</p>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <p>Scroll down to see button (fixed bottom-right).</p>
+    </div>
+</div>
+<button hidden
+        hx-on="scroll from:window throttle:100ms -> this.hidden = window.scrollY < 100;
+               click -> window.scrollTo({ top: 0, behavior: 'smooth' })"
+        style="position:fixed;bottom:2rem;right:2rem;font-size:1.5rem;z-index:999;">↑</button>
+
+<!-- 19. Clipboard Copy -->
+<div class="row-title">19. Clipboard Copy</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ copied: false }">
+            <input value="ABC-123" readonly>
+            <button @click="navigator.clipboard.writeText($el.previousElementSibling.value); copied = true; setTimeout(() => copied = false, 2000)"
+                    x-text="copied ? 'Copied!' : 'Copy'"></button>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <input id="code19" value="ABC-123" readonly>
+        <button hx-on="click -> navigator.clipboard.writeText(q('prev input').value); this.textContent = 'Copied!';
+                       click delay:2s -> this.textContent = 'Copy'">Copy</button>
+    </div>
+</div>
+
+<!-- 20. Multi-Step Wizard -->
+<div class="row-title">20. Multi-Step Wizard</div>
+<div class="row">
+    <div class="col">
+        <h3>Alpine.js</h3>
+        <div x-data="{ step: 1 }">
+            <div x-show="step === 1">
+                <p>Step 1: Enter your info.</p>
+                <button @click="step = 2">Next →</button>
+            </div>
+            <div x-show="step === 2">
+                <p>Step 2: Confirm details.</p>
+                <button @click="step = 1">← Back</button>
+                <button @click="step = 3">Next →</button>
+            </div>
+            <div x-show="step === 3">
+                <p>Step 3: Done! 🎉</p>
+                <button @click="step = 1">Start Over</button>
+            </div>
+        </div>
+    </div>
+    <div class="col">
+        <h3>hx-live</h3>
+        <div>
+            <section>
+                <p>Step 1: Enter your info.</p>
+                <button hx-on:click="this.closest('section').hidden = true; this.closest('section').nextElementSibling.hidden = false;">Next →</button>
+            </section>
+            <section hidden>
+                <p>Step 2: Confirm details.</p>
+                <button hx-on:click="this.closest('section').hidden = true; this.closest('section').previousElementSibling.hidden = false;">← Back</button>
+                <button hx-on:click="this.closest('section').hidden = true; this.closest('section').nextElementSibling.hidden = false;">Next →</button>
+            </section>
+            <section hidden>
+                <p>Step 3: Done! 🎉</p>
+                <button hx-on:click="q(this.closest('div')).q('section').hidden = true; q(this.closest('div')).q('first section').hidden = false;">Start Over</button>
+            </section>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>
