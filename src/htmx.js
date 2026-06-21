@@ -242,13 +242,20 @@ var htmx = (() => {
             return defaultVal;
         }
 
+        __splitOnCommas(str) {
+            return str
+                .replace(/<[^>]+\/?>|\[[^\]]*\]|\([^)]*\)/g, m => m.replace(/,/g, '%2C'))
+                .split(',')
+                .map(s => s.replace(/%2C/g, ','));
+        }
+
         __parseConfig(configString) {
             if (!configString) return {};
             if (configString[0] === '{') return JSON.parse(configString);
-            let configPattern = /(?:"([^"]+)"|([^\s,:]+))(?:\s*:\s*(?:"([^"]*)"|'([^']*)'|<([^>]+)\/>|([^\s,]+)))?(?=\s|,|$)/g;
+            let configPattern = /(?:"([^"]+)"|([^\s,:]+))(?:\s*:\s*(?:"([^"]*)"|'([^']*)'|<([^>]+)\/>|\(([^)]*)\)|([^\s,]+)))?(?=\s|,|$)/g;
             return [...configString.matchAll(configPattern)].reduce((result, match) => {
                 let keyPath = (match[1] ?? match[2]).split('.');
-                let value = (match[3] ?? match[4] ?? match[5] ?? match[6] ?? 'true').trim();
+                let value = (match[3] ?? match[4] ?? match[5] ?? match[6] ?? match[7] ?? 'true').trim();
                 try { value = JSON.parse(value); } catch {}
                 if (keyPath.some(k => this.__internalField(k))) return result;
                 keyPath.slice(0, -1).reduce((obj, key) => obj[key] ??= {}, result)[keyPath.at(-1)] = value;
@@ -275,8 +282,7 @@ var htmx = (() => {
         }
 
         __parseTriggerSpecs(spec) {
-            // Split on commas that are NOT inside [...] — handles filters like click[myFunc(a,b)]
-            return spec.split(/,(?![^\[]*\])/).flatMap(s => {
+            return this.__splitOnCommas(spec).flatMap(s => {
                 let [,name,rest] = s.match(/^\s*(\S+\[[^\]]*\]|\S+)\s*(.*?)\s*$/) ?? [];
                 if (!name) return [];  // skip empty/whitespace-only tokens
                 if (/\[[^\]]*$/.test(name)) throw "unterminated:" + name;  // e.g. click[ctrlKey
@@ -1793,8 +1799,7 @@ var htmx = (() => {
             if (selector.startsWith('global ')) {
                 return this.__findAllExt(elt, selector.slice(7), thisAttr, true);
             }
-            let parts = selector ? selector.replace(/<[^>]+\/>/g, m => m.replace(/,/g, '%2C'))
-                .split(',').map(p => p.replace(/%2C/g, ',')) : [];
+            let parts = selector ? this.__splitOnCommas(selector) : [];
             let result = []
             let unprocessedParts = []
             for (const part of parts) {
