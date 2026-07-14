@@ -1,0 +1,516 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 3.2 Final//EN">
+<html>
+<head>
+  <title>C64DB - THE COMMODORE 64 DATABASE SYSTEM</title>
+  <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+  <style>
+    body {
+      background-color: #4040c0;
+      color: #a0a0ff;
+      font-family: "Courier New", Courier, monospace;
+      margin: 20px 40px;
+    }
+
+    h1 {
+      color: #ffffff;
+      text-align: center;
+      font-size: 28px;
+      text-transform: uppercase;
+      letter-spacing: 4px;
+    }
+
+    h2 {
+      color: #ffffff;
+      text-transform: uppercase;
+      border-bottom: 2px solid #ffffff;
+      padding-bottom: 4px;
+      letter-spacing: 2px;
+    }
+
+    h3 {
+      color: #ffff00;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    a {
+      color: #00ffff;
+    }
+
+    a:visited {
+      color: #ff00ff;
+    }
+
+    pre {
+      background-color: #000080;
+      color: #00ff00;
+      border: 2px solid #00ff00;
+      padding: 12px;
+      font-size: 13px;
+      overflow-x: auto;
+    }
+
+    code {
+      color: #ffff00;
+      background-color: #000040;
+      padding: 1px 4px;
+    }
+
+    blockquote {
+      border-left: 4px solid #ffff00;
+      margin-left: 20px;
+      padding-left: 12px;
+      color: #ffff00;
+      font-style: italic;
+    }
+
+    table {
+      border: 2px solid #ffffff;
+      border-collapse: collapse;
+      width: 100%;
+      margin: 10px 0;
+    }
+
+    th {
+      background-color: #000080;
+      color: #ffffff;
+      border: 1px solid #ffffff;
+      padding: 6px 10px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    td {
+      border: 1px solid #a0a0ff;
+      padding: 5px 10px;
+      color: #a0a0ff;
+    }
+
+    td code {
+      background: none;
+      color: #00ff00;
+    }
+
+    hr {
+      border: none;
+      border-top: 2px solid #ffffff;
+      margin: 24px 0;
+    }
+
+    .boot-screen {
+      background-color: #4040c0;
+      color: #a0a0ff;
+      border: 3px solid #ffffff;
+      padding: 16px 24px;
+      font-size: 15px;
+      text-align: center;
+      margin-bottom: 30px;
+      letter-spacing: 2px;
+    }
+
+    .boot-screen .cursor {
+      animation: blink 1s step-end infinite;
+    }
+
+    @keyframes blink {
+      50% { opacity: 0; }
+    }
+
+    .warning {
+      background-color: #800000;
+      color: #ffffff;
+      border: 2px solid #ff0000;
+      padding: 8px 14px;
+      margin: 10px 0;
+    }
+
+    .nav {
+      background-color: #000080;
+      border: 2px solid #ffffff;
+      padding: 10px 16px;
+      margin-bottom: 28px;
+      text-align: center;
+    }
+
+    .nav a {
+      margin: 0 12px;
+      font-size: 13px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+    }
+
+    .footer {
+      text-align: center;
+      margin-top: 40px;
+      font-size: 12px;
+      color: #6060a0;
+      border-top: 1px solid #6060a0;
+      padding-top: 12px;
+    }
+
+    .counter {
+      text-align: center;
+      margin: 20px 0;
+    }
+
+    .counter img {
+      border: 1px solid #ffffff;
+    }
+
+    .haiku {
+      text-align: center;
+      color: #00ffff;
+      font-style: italic;
+      margin: 20px 0;
+      line-height: 2;
+    }
+
+    .new-gif {
+      color: #ff0000;
+      font-weight: bold;
+      font-size: 11px;
+      border: 1px solid #ff0000;
+      padding: 1px 4px;
+      animation: blink 0.8s step-end infinite;
+    }
+
+    .under-construction {
+      text-align: center;
+      color: #ffff00;
+      font-size: 13px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+
+  <div class="boot-screen">
+    **** C64DB V1.0 ****<br>
+    64K RAM SYSTEM &nbsp; 38911 BASIC BYTES FREE<br><br>
+    READY.<br>
+    <span class="cursor">&#9608;</span>
+  </div>
+
+  <h1>&#9632; C64DB &#9632;<br>THE COMMODORE 64 DATABASE SYSTEM</h1>
+
+  <p align="center">
+    <img src="https://via.placeholder.com/468x60/000080/00ff00?text=C64DB+--+PEEK+AND+POKE+YOUR+DATA" alt="C64DB Banner" width="468" height="60">
+  </p>
+
+  <div class="under-construction">
+    *** PAGE BEST VIEWED IN NETSCAPE NAVIGATOR 3.0 AT 640x480 ***
+  </div>
+
+  <div class="nav">
+    <a href="#what">WHAT IS IT?</a> |
+    <a href="#quickstart">QUICK START</a> |
+    <a href="#peek">PEEK</a> |
+    <a href="#poke">POKE</a> |
+    <a href="#sys">SYS</a> |
+    <a href="#load">LOAD</a> |
+    <a href="#save">SAVE</a> |
+    <a href="#memmap">MEMORY MAP</a> |
+    <a href="#sprites">SPRITES</a> |
+    <a href="#errors">ERRORS</a> |
+    <a href="#tape">TAPE MODE</a> |
+    <a href="#config">CONFIG</a>
+  </div>
+
+  <hr>
+
+  <h2><a name="what">WHAT IS C64DB?</a></h2>
+
+  <p>
+    C64DB is a blazing-fast, dependency-free database that fits in <b>64K</b>
+    (well, not really, but it <i>feels</i> that way). Inspired by the raw, direct
+    memory access philosophy of the Commodore 64, C64DB lets you PEEK and POKE
+    your data with zero ceremony.
+  </p>
+
+  <blockquote>
+    "Why use an ORM when you can POKE directly into memory?"
+  </blockquote>
+
+  <hr>
+
+  <h2><a name="quickstart">QUICK START</a> <span class="new-gif">NEW!</span></h2>
+
+  <pre>LOAD "C64DB",8,1
+READY.</pre>
+
+  <pre>import c64db from 'c64db';
+
+const db = c64db.init();</pre>
+
+  <hr>
+
+  <h2>CORE CONCEPTS</h2>
+
+  <h3><a name="peek">PEEK &mdash; READING DATA</a></h3>
+
+  <p>
+    <code>PEEK(address)</code> reads a single byte from a memory location.
+    In C64DB, <b>PEEK</b> retrieves a record by its address (id).
+  </p>
+
+  <pre>// PEEK at address 53280 (border color register -- classic!)
+const record = await db.peek(53280);
+
+// PEEK a range of addresses
+const records = await db.peekRange(49152, 49162);</pre>
+
+  <p>Returns <code>null</code> if nothing lives at that address. No exceptions. No drama. Just like the real thing.</p>
+
+  <hr>
+
+  <h3><a name="poke">POKE &mdash; WRITING DATA</a></h3>
+
+  <p>
+    <code>POKE(address, value)</code> writes a byte to a memory location.
+    In C64DB, <b>POKE</b> inserts or overwrites a record at the given address.
+  </p>
+
+  <pre>// POKE 53280,0  -- classic black border trick
+await db.poke(53280, { color: 'black', notes: 'classic demo trick' });
+
+// POKE multiple addresses at once
+await db.pokeMany([
+  [53280, { color: 'black' }],
+  [53281, { color: 'black' }],  // background too
+]);</pre>
+
+  <div class="warning">
+    &#9888; <b>WARNING:</b> Just like on the real C64, POKEing the wrong address can cause
+    unexpected behaviour. There is no undo. <b>POKE RESPONSIBLY.</b>
+  </div>
+
+  <hr>
+
+  <h3><a name="sys">SYS &mdash; EXECUTING STORED PROCEDURES</a></h3>
+
+  <p>
+    <code>SYS(address)</code> jumps to machine code at a memory address.
+    In C64DB, <b>SYS</b> executes a named stored procedure.
+  </p>
+
+  <pre>// SYS 64738 -- the famous soft reset address
+await db.sys('RESET_USER_SESSIONS', { olderThan: '30d' });
+
+await db.sys('REBUILD_INDEX', { table: 'sprites' });</pre>
+
+  <hr>
+
+  <h3><a name="load">LOAD &mdash; IMPORTING DATA</a></h3>
+
+  <pre>// LOAD "*",8,1  -- load first program from disk
+await db.load('backup_2024.d64', { device: 8, secondary: 1 });</pre>
+
+  <p>
+    The <code>,8</code> refers to device number (your storage backend).
+    The <code>,1</code> loads into the address specified in the file header &mdash;
+    i.e. it respects your schema.
+  </p>
+
+  <p><b>SUPPORTED DEVICES:</b></p>
+
+  <table>
+    <tr>
+      <th>Device #</th>
+      <th>Backend</th>
+    </tr>
+    <tr>
+      <td>8</td>
+      <td>Primary disk (default)</td>
+    </tr>
+    <tr>
+      <td>9</td>
+      <td>Secondary disk</td>
+    </tr>
+    <tr>
+      <td>1</td>
+      <td>Datasette (tape / slow, but reliable)</td>
+    </tr>
+  </table>
+
+  <hr>
+
+  <h3><a name="save">SAVE &mdash; EXPORTING DATA</a></h3>
+
+  <pre>// SAVE "MYDATA",8
+await db.save('MYDATA', { device: 8 });
+
+// SAVE with address range
+await db.save('SPRITES', { device: 8, start: 0x2000, end: 0x3FFF });</pre>
+
+  <hr>
+
+  <h2><a name="memmap">MEMORY MAP</a></h2>
+
+  <p>C64DB reserves certain address ranges, just like the real C64 hardware registers:</p>
+
+  <table>
+    <tr>
+      <th>Address Range</th>
+      <th>Purpose</th>
+    </tr>
+    <tr>
+      <td><code>0x0000&ndash;0x00FF</code></td>
+      <td>Zero page &mdash; ultra-fast key/value cache</td>
+    </tr>
+    <tr>
+      <td><code>0xD000&ndash;0xD3FF</code></td>
+      <td>VIC-II registers &mdash; UI/display metadata</td>
+    </tr>
+    <tr>
+      <td><code>0xD400&ndash;0xD7FF</code></td>
+      <td>SID registers &mdash; event/audio log</td>
+    </tr>
+    <tr>
+      <td><code>0xC000&ndash;0xCFFF</code></td>
+      <td>Free RAM &mdash; your collections live here</td>
+    </tr>
+    <tr>
+      <td><code>0xE000&ndash;0xFFFF</code></td>
+      <td>KERNAL ROM &mdash; system tables, read-only</td>
+    </tr>
+  </table>
+
+  <blockquote>
+    Attempting to POKE into <code>0xE000&ndash;0xFFFF</code> will throw a <code>KERNAL_VIOLATION</code> error.
+  </blockquote>
+
+  <hr>
+
+  <h2><a name="sprites">SPRITES &mdash; INDEXED VIEWS</a></h2>
+
+  <p>
+    Sprites are lightweight, pre-defined views over your data.
+    Up to <b>8 sprites</b> can be active at once (hardware limitation).
+  </p>
+
+  <pre>// Define a sprite (indexed view)
+db.defineSprite(0, {
+  name: 'active_users',
+  query: { status: 'active' },
+  color: 1  // white
+});
+
+// Read from sprite
+const users = await db.sprite(0).peek();</pre>
+
+  <hr>
+
+  <h2><a name="errors">ERROR HANDLING</a></h2>
+
+  <p>C64DB errors follow classic C64 error messages:</p>
+
+  <table>
+    <tr>
+      <th>Error Code</th>
+      <th>Message</th>
+      <th>Meaning</th>
+    </tr>
+    <tr>
+      <td><code>?SYNTAX ERROR</code></td>
+      <td>Invalid query syntax</td>
+      <td>You typed something wrong</td>
+    </tr>
+    <tr>
+      <td><code>?OUT OF MEMORY ERROR</code></td>
+      <td>Storage limit reached</td>
+      <td>Time to SAVE and clear</td>
+    </tr>
+    <tr>
+      <td><code>?ILLEGAL QUANTITY ERROR</code></td>
+      <td>Value out of range</td>
+      <td>Check your POKE value</td>
+    </tr>
+    <tr>
+      <td><code>?DEVICE NOT PRESENT</code></td>
+      <td>Backend unreachable</td>
+      <td>Check your connection</td>
+    </tr>
+    <tr>
+      <td><code>?LOAD ERROR</code></td>
+      <td>Import failed</td>
+      <td>Corrupt or missing file</td>
+    </tr>
+    <tr>
+      <td><code>?BREAK</code></td>
+      <td>Query cancelled</td>
+      <td>User or timeout interrupted</td>
+    </tr>
+  </table>
+
+  <pre>try {
+  await db.poke(0xFFFF, data);
+} catch (e) {
+  if (e.code === 'KERNAL_VIOLATION') {
+    console.error('?ILLEGAL QUANTITY ERROR IN 10');
+  }
+}</pre>
+
+  <hr>
+
+  <h2><a name="tape">THE DATASETTE (TAPE) MODE</a></h2>
+
+  <p>
+    For environments where disk access is unavailable, C64DB falls back to
+    <b>Datasette mode</b> &mdash; slower, sequential reads, but it <i>always</i> works eventually.
+  </p>
+
+  <pre>const db = c64db.init({ device: 1 }); // tape mode
+
+// Expect this to take a while...
+// PRESS PLAY ON TAPE
+await db.load('archive.tap');</pre>
+
+  <hr>
+
+  <h2><a name="config">CONFIGURATION &mdash; POKE THE REGISTERS</a></h2>
+
+  <p>Fine-tune C64DB by poking its config registers directly:</p>
+
+  <pre>c64db.config.poke('BORDER_COLOR', 0);       // 53280 -- cosmetic only
+c64db.config.poke('CACHE_SIZE', 256);        // zero page size
+c64db.config.poke('MAX_SPRITES', 8);         // concurrent views
+c64db.config.poke('TURBO_MODE', true);       // skip validation (dangerous!)</pre>
+
+  <hr>
+
+  <h2>HAIKU</h2>
+
+  <div class="haiku">
+    poke fifty-three-two-eight<br>
+    the border turns black at last<br>
+    data flows like sprites
+  </div>
+
+  <hr>
+
+  <pre>READY.
+<span class="cursor">&#9608;</span></pre>
+
+  <div class="counter">
+    <p><font size="1" color="#6060a0">YOU ARE VISITOR NUMBER:</font><br>
+    <font size="4" color="#00ff00">&#9608;&#9608;&#9608;&#9608;&#9608;&#9608;</font><br>
+    <font size="1" color="#6060a0">SINCE JANUARY 1, 1995</font></p>
+  </div>
+
+  <div class="footer">
+    <p>
+      &copy; 1995 C64DB PROJECT &mdash; ALL RIGHTS RESERVED<br>
+      <font size="1">
+        THIS PAGE IS UNDER CONSTRUCTION &#9888;<br>
+        BEST VIEWED IN NETSCAPE NAVIGATOR 3.0 | 640x480 | 256 COLOURS<br>
+        <a href="mailto:sysop@c64db.com">SYSOP@C64DB.COM</a> |
+        <a href="#">GUESTBOOK</a> |
+        <a href="#">WEBRINGS</a> |
+        <a href="#">LINKS</a>
+      </font>
+    </p>
+    <p><font size="1" color="#4040a0">Last updated: 14 MAR 1995 &mdash; Geocities / Area 51</font></p>
+  </div>
+
+</body>
+</html>
