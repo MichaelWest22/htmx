@@ -1,0 +1,22 @@
+<dialog id="drupal-dialog" data-modal>
+  <div data-dialog-titlebar>
+    Edit profile
+    <form method="dialog">
+      <button data-dialog-close-btn aria-label="Close">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+  <div data-dialog-content>
+    <form id="profile-form" method="dialog">
+      <p><label>Display name<br><input type="text" name="name" value="Jane Doe" autofocus></label></p>
+      <p><label>Email<br><input type="email" name="email" value="jane@example.com"></label></p>
+    </form>
+  </div>
+  <div data-dialog-footer>
+    <form method="dialog"><button value="cancel">Cancel</button></form>
+    <button type="submit" form="profile-form" value="save">Save changes</button>
+  </div>
+</dialog>

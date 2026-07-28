@@ -1,0 +1,11 @@
+<hx-dialog modal persist id="persist-dialog">
+  <h2>Persist dialog</h2>
+  <p>After closing, the <code>&lt;dialog&gt;</code> stays in the DOM. The reopen button below shows it again without a fetch.</p>
+  <label style="display:block;margin-top:.5rem">
+    Your value
+    <input type="text" name="value" style="display:block;margin-top:.25rem;width:100%;box-sizing:border-box">
+  </label>
+  <div class="form-actions">
+    <button commandfor="persist-dialog" command="close">Close</button>
+  </div>
+</hx-dialog>

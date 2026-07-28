@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>dialog demo — pure server-driven</title>
+  <link rel="stylesheet" href="dialog.css">
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    button { padding: .4rem .9rem; cursor: pointer; }
+    code   { background: #f3f4f9; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    .approach {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .9rem; line-height: 1.6;
+    }
+    #wire-log { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem; }
+    #wire-log h2 { margin-top: 0; }
+    #wire-output {
+      white-space: pre-wrap; word-break: break-all;
+      font-family: monospace; font-size: .8rem;
+      background: #1e1e1e; color: #d4d4d4;
+      padding: 1rem; border-radius: 4px;
+      max-height: 300px; overflow-y: auto;
+    }
+    #wire-output .entry { border-bottom: 1px solid #333; padding-bottom: .75rem; margin-bottom: .75rem; }
+    #wire-output .entry:last-child { border-bottom: 0; margin-bottom: 0; }
+    #wire-output .label { color: #569cd6; margin-bottom: .25rem; }
+    #wire-clear { font-size: .75rem; float: right; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>Pure server-driven <code>&lt;dialog&gt;</code> demo</h1>
+
+  <div class="approach">
+    <strong>Approach:</strong> The server returns a fully-formed <code>&lt;dialog&gt;</code> element.
+    htmx swaps it into the DOM via <code>hx-swap="outerHTML"</code>.
+    A 7-line shim calls <code>showModal()</code> on any <code>&lt;dialog data-modal&gt;</code> that arrives.
+    All close interactions use native <code>&lt;form method="dialog"&gt;</code> — zero JS.
+    <br><br>
+    <strong>Future state:</strong> When <code>command="show-modal"</code> reaches ~95% adoption,
+    delete <code>dialog-shim.js</code> and add <code>commandfor</code>/<code>command="show-modal"</code>
+    to the trigger buttons. The rest stays identical.
+  </div>
+
+  <h2>Modal</h2>
+  <p>First open: <code>hx-target="body" hx-swap="beforeend"</code> — appends dialog to body.<br>
+     Subsequent: <code>hx-target="#drupal-dialog" hx-swap="outerHTML"</code> — replaces in place.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/modal.html"
+      hx-target="body"
+      hx-swap="beforeend">Simple modal</button>
+    <button
+      hx-get="fragments/modal-form.html"
+      hx-target="body"
+      hx-swap="beforeend">Modal with form</button>
+  </div>
+
+  <h2>Close on backdrop — <code>closedby="any"</code></h2>
+  <p>Native Chrome 133+, Firefox 136+. Shim polyfills for Safari via a delegated click listener.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/backdrop.html"
+      hx-target="body"
+      hx-swap="beforeend">Open (click outside to close)</button>
+  </div>
+
+  <h2>Non-modal</h2>
+  <p>Server sets <code>open</code> attribute directly. No shim involvement.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/nonmodal.html"
+      hx-target="body"
+      hx-swap="beforeend">Non-modal dialog</button>
+  </div>
+
+  <h2>Persist (stays in DOM after close)</h2>
+  <p>Server sets <code>data-persist</code> on the <code>&lt;dialog&gt;</code>. Close removes it from view but not the DOM — reopen with no fetch.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/persist.html"
+      hx-target="body"
+      hx-swap="beforeend">Open persist dialog</button>
+    <button onclick="document.getElementById('persist-dialog')?.showModal()">Reopen (no fetch)</button>
+  </div>
+
+  <h2>Replace content in open dialog</h2>
+  <p>Target the existing <code>#drupal-dialog</code> with <code>hx-swap="outerHTML"</code>.
+     Server returns a new <code>&lt;dialog data-modal&gt;</code> — shim calls <code>showModal()</code> again.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/modal.html"
+      hx-target="body"
+      hx-swap="beforeend">Open modal first</button>
+    <button
+      hx-get="fragments/replace.html"
+      hx-target="#drupal-dialog"
+      hx-swap="outerHTML">Replace content (step 2)</button>
+  </div>
+
+  <h2>Server-initiated close</h2>
+  <p>Server returns a fragment that removes <code>#drupal-dialog</code> from the DOM.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/modal.html"
+      hx-target="body"
+      hx-swap="beforeend">Open modal first</button>
+    <button
+      hx-get="fragments/close.html"
+      hx-target="body"
+      hx-swap="beforeend">Then close it (server-driven)</button>
+  </div>
+
+  <h2>ARIA — <code>role="alertdialog"</code></h2>
+  <p>Server sets <code>role</code>, <code>aria-labelledby</code>, <code>aria-describedby</code> directly on <code>&lt;dialog&gt;</code>.</p>
+  <div class="row">
+    <button
+      hx-get="fragments/aria-alert.html"
+      hx-target="body"
+      hx-swap="beforeend">Confirm delete (alertdialog)</button>
+  </div>
+
+  <h2>Future state — <code>command="show-modal"</code></h2>
+  <p>No shim. Chrome 135+ only (~65% today). Shows what the zero-JS future looks like.</p>
+  <div class="row">
+    <!-- commandfor/command replaces the shim entirely once adoption is sufficient -->
+    <button
+      hx-get="fragments/modal.html"
+      hx-target="body"
+      hx-swap="beforeend"
+      commandfor="drupal-dialog"
+      command="show-modal">Open via command= (Chrome 135+)</button>
+  </div>
+
+  <div id="wire-log">
+    <h2>Wire log <button id="wire-clear">Clear</button></h2>
+    <div id="wire-output"></div>
+  </div>
+
+  <script src="htmx.js"></script>
+  <script src="dialog-shim.js"></script>
+  <script>
+    const output = document.getElementById('wire-output');
+    let count = 0;
+    document.addEventListener('htmx:after:request', (e) => {
+      const { ctx } = e.detail;
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `<div class="label">#${++count} ${ctx.request.action}</div>${escHtml(ctx.text)}`;
+      output.appendChild(entry);
+      output.scrollTop = output.scrollHeight;
+    });
+    document.getElementById('wire-clear').addEventListener('click', () => {
+      output.replaceChildren(); count = 0;
+    });
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>

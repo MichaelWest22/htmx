@@ -1,0 +1,117 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>hx-dialog demo</title>
+  <meta name="htmx-config" content='{"extensions":"drupal-dialog"}'>
+  <link rel="stylesheet" href="dialog-base.css">
+  <link rel="stylesheet" href="dialog-themes.css">
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    button, .btn { padding: .4rem .9rem; cursor: pointer; }
+    #wire-log {
+      margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem;
+    }
+    #wire-log h2 { margin-top: 0; }
+    #wire-output {
+      white-space: pre-wrap; word-break: break-all;
+      font-family: monospace; font-size: .8rem;
+      background: #1e1e1e; color: #d4d4d4;
+      padding: 1rem; border-radius: 4px;
+      max-height: 300px; overflow-y: auto;
+      counter-reset: request;
+    }
+    #wire-output .entry { border-bottom: 1px solid #333; padding-bottom: .75rem; margin-bottom: .75rem; }
+    #wire-output .entry:last-child { border-bottom: 0; margin-bottom: 0; }
+    #wire-output .label { color: #569cd6; margin-bottom: .25rem; }
+    #wire-clear { font-size: .75rem; float: right; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1>hx-dialog extension demo</h1>
+  <p>Every button fetches a small HTML fragment containing an <code>&lt;hx-dialog&gt;</code> tag.
+     No server required — fragments are static <code>.html</code> files.</p>
+
+  <h2>Modal (default)</h2>
+  <div class="row">
+    <button hx-get="fragments/modal.html"        hx-swap="none">Simple modal</button>
+    <button hx-get="fragments/modal-form.html"   hx-swap="none">Modal with form</button>
+  </div>
+
+  <h2>Non-modal</h2>
+  <div class="row">
+    <button hx-get="fragments/nonmodal.html"     hx-swap="none">Non-modal dialog</button>
+    <button hx-get="fragments/nonmodal-a.html"   hx-swap="none">Dialog A</button>
+    <button hx-get="fragments/nonmodal-b.html"   hx-swap="none">Dialog B</button>
+  </div>
+
+  <h2>Close on backdrop click</h2>
+  <div class="row">
+    <button hx-get="fragments/backdrop.html"     hx-swap="none">Open (click outside to close)</button>
+  </div>
+
+  <h2>Server-initiated close</h2>
+  <div class="row">
+    <button hx-get="fragments/modal.html"        hx-swap="none">Open modal first</button>
+    <button hx-get="fragments/close.html"        hx-swap="none">Then close it</button>
+  </div>
+
+  <h2>Persist (stays in DOM after close)</h2>
+  <div class="row">
+    <button hx-get="fragments/persist.html" hx-swap="none">Open persist dialog</button>
+    <button onclick="document.getElementById('persist-dialog')?.showModal()">Reopen (no fetch)</button>
+  </div>
+
+  <h2>ARIA &amp; native attributes</h2>
+  <div class="row">
+    <button hx-get="fragments/aria-alert.html"  hx-swap="none">role=alertdialog (confirm)</button>
+    <button hx-get="fragments/aria-rtl.html"    hx-swap="none">dir=rtl + lang=ar</button>
+    <button hx-get="fragments/aria-picker.html" hx-swap="none">aria-label + style + data-*</button>
+  </div>
+
+  <h2>Alternative themes (class passthrough)</h2>
+  <div class="row">
+    <button hx-get="fragments/theme-minimal.html" hx-swap="none">Minimal</button>
+    <button hx-get="fragments/theme-dark.html"    hx-swap="none">Dark</button>
+    <button hx-get="fragments/theme-rounded.html" hx-swap="none">Rounded</button>
+  </div>
+
+  <h2>Replace content in open dialog</h2>
+  <div class="row">
+    <button hx-get="fragments/modal.html"        hx-swap="none">Open modal (step 1)</button>
+    <button hx-get="fragments/replace.html"      hx-swap="none">Replace content (step 2)</button>
+  </div>
+
+
+  <div id="wire-log">
+    <h2>Wire log <button id="wire-clear">Clear</button></h2>
+    <div id="wire-output"></div>
+  </div>
+
+  <script src="htmx.js"></script>
+  <script src="hx-dialog.js"></script>
+  <script>
+    const output = document.getElementById('wire-output');
+    let count = 0;
+    document.addEventListener('htmx:after:request', (e) => {
+      const { ctx } = e.detail;
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `<div class="label">#${++count} ${ctx.request.action}</div>${escHtml(ctx.text)}`;
+      output.appendChild(entry);
+      output.scrollTop = output.scrollHeight;
+    });
+    document.getElementById('wire-clear').addEventListener('click', () => {
+      output.replaceChildren();
+      count = 0;
+    });
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>

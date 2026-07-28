@@ -1,0 +1,99 @@
+/* ============================================================
+   dialog-themes.css
+   Alternative dialog styles for the hx-dialog demo.
+   Applied via class attribute on <hx-dialog class="...">
+   which copies through to the native <dialog> element.
+   ============================================================ */
+
+/* ----------------------------------------------------------
+   Minimal — clean light sheet, no titlebar colour
+   ---------------------------------------------------------- */
+dialog.minimal {
+  border: 1px solid #ddd;
+  box-shadow: 0 2px 8px rgba(0,0,0,.12);
+  border-radius: 2px;
+}
+dialog.minimal [data-dialog-titlebar] {
+  background: #fff;
+  color: #111;
+  border-bottom: 1px solid #eee;
+  font-weight: normal;
+  font-size: .9rem;
+}
+dialog.minimal [data-dialog-close-btn] { color: #999; }
+dialog.minimal [data-dialog-close-btn]:hover { color: #111; }
+dialog.minimal [data-dialog-footer] {
+  background: #fff;
+  border-top: 1px solid #eee;
+}
+
+/* ----------------------------------------------------------
+   Dark — near-black shell, high contrast
+   ---------------------------------------------------------- */
+dialog.dark {
+  background: #18181b;
+  color: #e4e4e7;
+  border: 1px solid #3f3f46;
+  box-shadow: 0 16px 48px rgba(0,0,0,.6);
+  border-radius: 6px;
+}
+dialog.dark [data-dialog-titlebar] {
+  background: #09090b;
+  color: #fafafa;
+  border-bottom: 1px solid #27272a;
+}
+dialog.dark [data-dialog-close-btn] { color: #71717a; }
+dialog.dark [data-dialog-close-btn]:hover { color: #fafafa; }
+dialog.dark [data-dialog-content] {
+  background: #18181b;
+  color: #e4e4e7;
+}
+dialog.dark [data-dialog-footer] {
+  background: #09090b;
+  border-top: 1px solid #27272a;
+}
+dialog.dark [data-dialog-footer] button {
+  background: #3f3f46;
+  color: #fafafa;
+  border: 1px solid #52525b;
+  border-radius: 4px;
+  padding: .4rem .9rem;
+  cursor: pointer;
+}
+dialog.dark [data-dialog-footer] button:hover { background: #52525b; }
+dialog.dark::backdrop { background: rgba(0,0,0,.7); }
+
+/* ----------------------------------------------------------
+   Rounded — soft corners, colourful titlebar, friendly feel
+   ---------------------------------------------------------- */
+dialog.rounded {
+  border-radius: 16px;
+  border: 0;
+  box-shadow: 0 8px 40px rgba(99,102,241,.25), 0 2px 8px rgba(0,0,0,.1);
+  overflow: hidden; /* clip children to border-radius */
+}
+dialog.rounded [data-dialog-titlebar] {
+  background: linear-gradient(135deg, #6366f1, #8b5cf6);
+  color: #fff;
+  border-radius: 0;
+  font-size: 1rem;
+}
+dialog.rounded [data-dialog-close-btn] { color: rgba(255,255,255,.7); }
+dialog.rounded [data-dialog-close-btn]:hover { color: #fff; }
+dialog.rounded [data-dialog-content] { padding: 1.5rem 1.75rem; }
+dialog.rounded [data-dialog-footer] {
+  background: #f5f3ff;
+  border-top: 1px solid #ede9fe;
+  border-radius: 0;
+}
+dialog.rounded [data-dialog-footer] button {
+  background: #6366f1;
+  color: #fff;
+  border: 0;
+  border-radius: 8px;
+  padding: .45rem 1rem;
+  cursor: pointer;
+  font-size: .9rem;
+}
+dialog.rounded [data-dialog-footer] button:hover { background: #4f46e5; }
+dialog.rounded::backdrop { background: rgba(99,102,241,.2); }

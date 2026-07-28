@@ -1,0 +1,6 @@
+<!-- Server signals close by returning this fragment.
+     The script closes and removes the dialog by id, then removes itself. -->
+<script>
+  document.getElementById('drupal-dialog')?.close();
+  document.currentScript.remove();
+</script>

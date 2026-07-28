@@ -1,0 +1,20 @@
+<dialog id="drupal-dialog" data-modal role="alertdialog"
+        aria-labelledby="alert-title" aria-describedby="alert-desc">
+  <div data-dialog-titlebar>
+    <span id="alert-title">Permanently delete account?</span>
+    <form method="dialog">
+      <button data-dialog-close-btn aria-label="Close">
+        <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+          <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+        </svg>
+      </button>
+    </form>
+  </div>
+  <div data-dialog-content>
+    <p id="alert-desc">This will permanently delete your account and all associated data. This action cannot be undone.</p>
+  </div>
+  <div data-dialog-footer>
+    <form method="dialog"><button value="cancel">Cancel</button></form>
+    <form method="dialog"><button value="delete" autofocus>Delete account</button></form>
+  </div>
+</dialog>
