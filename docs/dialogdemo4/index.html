@@ -116,7 +116,7 @@
      not the <code>&lt;drupal-dialog id="drupal-modal"&gt;</code> wrapper — two ids are required.</p>
   <div class="row">
     <button hx-action="fragments/replace.html">Open non-modal first</button>
-    <button hx-action="fragments/close.html">Close it (delete)</button>
+    <button hx-action="fragments/close.html" hx-swap="none">Close it (delete)</button>
     <button hx-action="fragments/close-insert-closed.html">Close it (insert closed)</button>
     <button commandfor="drupal-modal-inner" command="show-modal">Reopen (no fetch)</button>
   </div>
