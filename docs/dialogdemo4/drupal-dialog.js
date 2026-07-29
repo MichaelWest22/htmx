@@ -23,20 +23,24 @@ class DrupalDialog extends HTMLElement {
       dialog.addEventListener('click', this._backdropHandler);
     }
 
+    // Remove self from DOM on close unless data-persist.
+    let skipClose = false;
+    dialog.addEventListener('close', () => {
+      if (skipClose) { skipClose = false; return; }
+      if (!this.hasAttribute('data-persist')) this.remove();
+    });
+
     // Open the dialog — open attribute is the declarative signal from the server.
     // data-modal on <dialog> upgrades to showModal(); plain open = non-modal show().
     if (dialog.hasAttribute('open')) {
+      skipClose = true;
+      dialog.close();
       if (dialog.hasAttribute('data-modal')) {
-        dialog.close();
         dialog.showModal();
+      } else {
+        dialog.show();
       }
-      // non-modal: open attribute is sufficient, leave it
     }
-
-    // Remove self from DOM on close unless data-persist.
-    dialog.addEventListener('close', () => {
-      if (!this.hasAttribute('data-persist')) this.remove();
-    });
   }
 
   disconnectedCallback() {
