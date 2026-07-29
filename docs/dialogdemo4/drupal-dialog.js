@@ -32,7 +32,6 @@ class DrupalDialog extends HTMLElement {
     // data-modal on <dialog> upgrades to showModal(); plain open = non-modal show().
     if (dialog.hasAttribute('open')) {
       if (dialog.hasAttribute('data-modal')) {
-        dialog.removeAttribute('open');
         dialog.showModal();
       }
       // non-modal: open attribute is sufficient, leave it
