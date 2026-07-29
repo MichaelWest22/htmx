@@ -1,0 +1,34 @@
+<hx-partial hx-target="#drupal-off-canvas" hx-swap="delete"></hx-partial>
+<hx-partial hx-target="body" hx-swap="beforeend">
+  <drupal-dialog id="drupal-off-canvas">
+    <dialog open aria-labelledby="off-canvas-title">
+      <div data-dialog-titlebar>
+        <span id="off-canvas-title">Configure: Recent articles block</span>
+        <form method="dialog">
+          <button data-dialog-close-btn aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div data-dialog-content>
+        <form id="block-b-form">
+          <p><label>Number of items<br><input type="number" name="count" value="5" min="1" max="20" autofocus></label></p>
+          <p><label>Sort by
+            <select name="sort">
+              <option value="created">Date created</option>
+              <option value="title">Title</option>
+              <option value="changed">Last updated</option>
+            </select>
+          </label></p>
+          <p><label><input type="checkbox" name="show_pager"> Show pager</label></p>
+        </form>
+      </div>
+      <div data-dialog-footer>
+        <button hx-action="fragments/offcanvas.html">Back</button>
+        <button type="submit" form="block-b-form">Save block</button>
+      </div>
+    </dialog>
+  </drupal-dialog>
+</hx-partial>

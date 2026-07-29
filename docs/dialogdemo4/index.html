@@ -1,0 +1,155 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>dialog demo — &lt;drupal-dialog&gt; custom element</title>
+  <link rel="stylesheet" href="dialog.css">
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    button { padding: .4rem .9rem; cursor: pointer; }
+    code   { background: #f3f4f9; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    .approach {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .9rem; line-height: 1.6;
+    }
+    #wire-log { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem; }
+    #wire-log h2 { margin-top: 0; }
+    #wire-output {
+      white-space: pre-wrap; word-break: break-all;
+      font-family: monospace; font-size: .8rem;
+      background: #1e1e1e; color: #d4d4d4;
+      padding: 1rem; border-radius: 4px;
+      max-height: 300px; overflow-y: auto;
+    }
+    #wire-output .entry { border-bottom: 1px solid #333; padding-bottom: .75rem; margin-bottom: .75rem; }
+    #wire-output .entry:last-child { border-bottom: 0; margin-bottom: 0; }
+    #wire-output .label { color: #569cd6; margin-bottom: .25rem; }
+    #wire-clear { font-size: .75rem; float: right; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1><code>&lt;drupal-dialog&gt;</code> custom element demo</h1>
+
+  <div class="approach">
+    <strong>Approach:</strong> <code>&lt;drupal-dialog&gt;</code> is a custom element (~30 lines,
+    no dependencies) that owns <code>showModal()</code>, <code>closedby</code> polyfill, and
+    self-removal on close. The server delivers two <code>&lt;hx-partial&gt;</code> tags per
+    response — delete the old slot by id, insert the new one before end of body. No htmx
+    extension, no init code, no container div. Trigger buttons carry only <code>hx-action</code>.
+    <br><br>
+    <strong>Slots:</strong> <code>#drupal-modal</code> (modal) and
+    <code>#drupal-off-canvas</code> (non-modal) are independent — both can be open
+    simultaneously. Custom slots use any id.
+  </div>
+
+  <h2>Modal</h2>
+  <div class="row">
+    <button hx-action="fragments/modal.html">Simple modal</button>
+    <button hx-action="fragments/modal-form.html">Modal with form</button>
+  </div>
+
+  <h2>Close on backdrop — <code>closedby="any"</code></h2>
+  <p>Native Chrome 133+, Firefox 136+. <code>&lt;drupal-dialog&gt;</code> polyfills for Safari.</p>
+  <div class="row">
+    <button hx-action="fragments/backdrop.html">Open (click outside to close)</button>
+  </div>
+
+  <h2>outerMorph — form validation in open tray</h2>
+  <p>Open the tray, click a block, then submit the form empty. The server returns
+     the same <code>&lt;drupal-dialog id="drupal-off-canvas"&gt;</code> with validation
+     errors via <code>hx-target="#drupal-off-canvas" hx-swap="outerMorph"</code>.
+     The tray stays open, focus returns to the invalid field, scroll position is
+     preserved. No delete+insert — morph updates the existing element in place.</p>
+  <div class="row">
+    <button hx-action="fragments/offcanvas.html">Open tray, pick Hero block, submit empty</button>
+  </div>
+
+  <h2>Off-canvas tray — Layout Builder pattern</h2>
+  <p>The tray uses <code>#drupal-off-canvas</code>. Clicking a block inside sends a new
+     request that delete+inserts the same slot — the tray content is replaced but it
+     stays open. No persist needed. Open a modal on top to see both slots coexist.</p>
+  <div class="row">
+    <button hx-action="fragments/offcanvas.html">Open Layout Builder tray</button>
+    <button hx-action="fragments/modal.html">Open modal on top</button>
+  </div>
+
+  <h2>Non-modal — <code>#drupal-off-canvas</code> slot</h2>
+  <p>Independent slot from <code>#drupal-modal</code>. Open both simultaneously to see
+     Layout Builder-style coexistence.</p>
+  <div class="row">
+    <button hx-action="fragments/nonmodal.html">Non-modal (off-canvas slot)</button>
+    <button hx-action="fragments/modal.html">Open modal on top</button>
+  </div>
+
+  <h2>Persist (stays in DOM after close)</h2>
+  <p><code>data-persist</code> on <code>&lt;drupal-dialog&gt;</code> — close hides it,
+     DOM is kept. Two variants: inserted open (opens immediately), inserted closed
+     (stays hidden until <code>commandfor</code> triggers it).</p>
+  <p>Note: <code>commandfor</code> targets the inner <code>&lt;dialog id="persist-dialog-inner"&gt;</code>,
+     not the <code>&lt;drupal-dialog id="persist-dialog"&gt;</code> wrapper — two ids are required.</p>
+  <div class="row">
+    <button hx-action="fragments/persist-open.html">Insert open (opens immediately)</button>
+    <button hx-action="fragments/persist-closed.html">Insert closed (hidden)</button>
+    <button commandfor="persist-dialog-inner" command="show-modal">Reopen (no fetch)</button>
+  </div>
+
+  <h2>Replace — non-modal replaced by modal</h2>
+  <p>Open a non-modal first so the page stays interactive. The second response targets
+     the same <code>#drupal-modal</code> slot — delete partial removes it, insert partial
+     appends a modal replacement. <code>connectedCallback</code> calls
+     <code>showModal()</code> on the new one.</p>
+  <div class="row">
+    <button hx-action="fragments/replace.html">Open non-modal first</button>
+    <button hx-action="fragments/modal.html">Replace with modal (step 2)</button>
+  </div>
+
+  <h2>Server-initiated close</h2>
+  <p>Open a non-modal first so the page stays interactive. Server response contains only
+     <code>&lt;hx-partial hx-target="#drupal-modal" hx-swap="delete"&gt;</code>.
+     <code>disconnectedCallback</code> fires on the custom element for cleanup.
+     Or return a new closed dialog — stays in DOM, <code>commandfor</code> reopens it.</p>
+  <p>Note: <code>commandfor</code> targets the inner <code>&lt;dialog id="drupal-modal-inner"&gt;</code>,
+     not the <code>&lt;drupal-dialog id="drupal-modal"&gt;</code> wrapper — two ids are required.</p>
+  <div class="row">
+    <button hx-action="fragments/replace.html">Open non-modal first</button>
+    <button hx-action="fragments/close.html">Close it (delete)</button>
+    <button hx-action="fragments/close-insert-closed.html">Close it (insert closed)</button>
+    <button commandfor="drupal-modal-inner" command="show-modal">Reopen (no fetch)</button>
+  </div>
+
+  <h2>ARIA — <code>role="alertdialog"</code></h2>
+  <div class="row">
+    <button hx-action="fragments/aria-alert.html">Confirm delete (alertdialog)</button>
+  </div>
+
+  <div id="wire-log">
+    <h2>Wire log <button id="wire-clear">Clear</button></h2>
+    <div id="wire-output"></div>
+  </div>
+
+  <script src="htmx.js"></script>
+  <script src="drupal-dialog.js"></script>
+  <script>
+    const output = document.getElementById('wire-output');
+    let count = 0;
+    document.addEventListener('htmx:after:request', (e) => {
+      const { ctx } = e.detail;
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `<div class="label">#${++count} ${ctx.request.action}</div>${escHtml(ctx.text)}`;
+      output.appendChild(entry);
+      output.scrollTop = output.scrollHeight;
+    });
+    document.getElementById('wire-clear').addEventListener('click', () => {
+      output.replaceChildren(); count = 0;
+    });
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>

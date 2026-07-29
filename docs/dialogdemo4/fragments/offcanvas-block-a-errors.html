@@ -1,0 +1,33 @@
+<hx-partial hx-target="#drupal-off-canvas" hx-swap="outerMorph">
+  <drupal-dialog id="drupal-off-canvas">
+    <dialog open aria-labelledby="off-canvas-title">
+      <div data-dialog-titlebar>
+        <span id="off-canvas-title">Configure: Hero block</span>
+        <form method="dialog">
+          <button data-dialog-close-btn aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div data-dialog-content>
+        <form id="block-a-form" hx-action="fragments/offcanvas-block-a-errors.html">
+          <p>
+            <label>Heading<br>
+              <input type="text" name="heading" value="Welcome to our site"
+                     aria-describedby="heading-error" aria-invalid="true" autofocus>
+            </label>
+            <span id="heading-error" style="color:#b91c1c;font-size:.875rem">Heading field is invalid.</span>
+          </p>
+          <p><label>Subheading<br><input type="text" name="sub" value="Built with Drupal"></label></p>
+          <p><label><input type="checkbox" name="show_cta" checked> Show call-to-action button</label></p>
+        </form>
+      </div>
+      <div data-dialog-footer>
+        <form method="dialog"><button value="cancel">Cancel</button></form>
+        <button type="submit" form="block-a-form">Save block</button>
+      </div>
+    </dialog>
+  </drupal-dialog>
+</hx-partial>

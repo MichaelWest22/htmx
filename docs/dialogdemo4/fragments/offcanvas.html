@@ -1,0 +1,27 @@
+<hx-partial hx-target="#drupal-off-canvas" hx-swap="delete"></hx-partial>
+<hx-partial hx-target="body" hx-swap="beforeend">
+  <drupal-dialog id="drupal-off-canvas">
+    <dialog open aria-labelledby="off-canvas-title">
+      <div data-dialog-titlebar>
+        <span id="off-canvas-title">Layout Builder</span>
+        <form method="dialog">
+          <button data-dialog-close-btn aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div data-dialog-content>
+        <p>Select a block to configure it.</p>
+        <ul>
+          <li><button hx-action="fragments/offcanvas-block-a.html">Hero block</button></li>
+          <li><button hx-action="fragments/offcanvas-block-b.html">Recent articles block</button></li>
+        </ul>
+      </div>
+      <div data-dialog-footer>
+        <form method="dialog"><button value="done">Done</button></form>
+      </div>
+    </dialog>
+  </drupal-dialog>
+</hx-partial>

@@ -1,0 +1,24 @@
+<hx-partial hx-target="#persist-dialog" hx-swap="delete"></hx-partial>
+<hx-partial hx-target="body" hx-swap="beforeend">
+  <drupal-dialog id="persist-dialog" data-persist>
+    <dialog id="persist-dialog-inner" aria-labelledby="persist-dialog-title">
+      <div data-dialog-titlebar>
+        <span id="persist-dialog-title">Persistent dialog</span>
+        <form method="dialog">
+          <button data-dialog-close-btn aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div data-dialog-content>
+        <p>Inserted <em>without</em> <code>open</code> — stays closed until <code>commandfor</code> opens it.</p>
+        <p><label>Type something: <input type="text" name="note" placeholder="preserved between opens"></label></p>
+      </div>
+      <div data-dialog-footer>
+        <form method="dialog"><button value="close">Close</button></form>
+      </div>
+    </dialog>
+  </drupal-dialog>
+</hx-partial>

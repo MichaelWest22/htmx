@@ -1,0 +1,24 @@
+<hx-partial hx-target="#drupal-modal" hx-swap="delete"></hx-partial>
+<hx-partial hx-target="body" hx-swap="beforeend">
+  <drupal-dialog id="drupal-modal">
+    <dialog open data-modal closedby="any" aria-labelledby="drupal-modal-title">
+      <div data-dialog-titlebar>
+        <span id="drupal-modal-title">Click outside to close</span>
+        <form method="dialog">
+          <button data-dialog-close-btn aria-label="Close">
+            <svg width="12" height="12" viewBox="0 0 12 12" fill="none" aria-hidden="true" xmlns="http://www.w3.org/2000/svg">
+              <path d="M11 1L1 11M11 11L1 1" stroke="currentColor" stroke-width="1.5"/>
+            </svg>
+          </button>
+        </form>
+      </div>
+      <div data-dialog-content>
+        <p>This dialog uses <code>closedby="any"</code> — click the backdrop or press Escape to close.</p>
+        <p>Native in Chrome 133+, Firefox 136+. Polyfilled by <code>&lt;drupal-dialog&gt;</code> for Safari.</p>
+      </div>
+      <div data-dialog-footer>
+        <form method="dialog"><button value="ok">OK</button></form>
+      </div>
+    </dialog>
+  </drupal-dialog>
+</hx-partial>
