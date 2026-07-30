@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>message demo — full page load</title>
+  <link rel="stylesheet" href="message.css">
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    code { background: #f3f4f9; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    .approach {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .9rem; line-height: 1.6;
+    }
+    a { color: #1a6496; }
+  </style>
+</head>
+<body>
+
+  <h1>Full page load — messages pre-populated by server</h1>
+
+  <div class="approach">
+    <strong>Full page path:</strong> the server drains the flash bag during the page
+    render and writes <code>&lt;drupal-message&gt;</code> children directly into
+    <code>&lt;drupal-messages&gt;</code> in the initial HTML. No htmx, no
+    <code>&lt;hx-partial&gt;</code>, no JS insertion. <code>connectedCallback</code>
+    fires on each <code>&lt;drupal-message&gt;</code> as the browser parses the page
+    and announces them exactly as it would for htmx-delivered messages — the same
+    code path, the same element, the same behaviour.
+    <br><br>
+    The <code>&lt;drupal-messages&gt;</code> container is always present in the page
+    template. When there are no messages it is empty and hidden by
+    <code>drupal-messages:empty { display: none }</code>. No fallback element, no
+    hidden placeholder div, no JS promotion dance.
+  </div>
+
+  <!-- Full page load: server pre-populates drupal-messages directly.
+       In a real Drupal page StatusMessages::renderMessages() drains the flash
+       bag and the status_messages Twig template renders drupal-message elements
+       here. This page hard-codes the equivalent output. -->
+  <drupal-messages>
+    <drupal-message type="status">
+      <svg data-message-icon viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm3.707-9.293a1 1 0 00-1.414-1.414L9 10.586 7.707 9.293a1 1 0 00-1.414 1.414l2 2a1 1 0 001.414 0l4-4z" clip-rule="evenodd"/></svg>
+      <div data-message-content>Your profile has been updated.</div>
+      <button data-message-close aria-label="Dismiss">&#x2715;</button>
+    </drupal-message>
+    <drupal-message type="warning">
+      <svg data-message-icon viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clip-rule="evenodd"/></svg>
+      <div data-message-content>Your password expires in 7 days.</div>
+      <button data-message-close aria-label="Dismiss">&#x2715;</button>
+    </drupal-message>
+    <drupal-message type="error">
+      <svg data-message-icon viewBox="0 0 20 20" fill="currentColor" aria-hidden="true" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clip-rule="evenodd"/></svg>
+      <div data-message-content>Failed to send notification email.</div>
+      <button data-message-close aria-label="Dismiss">&#x2715;</button>
+    </drupal-message>
+  </drupal-messages>
+
+  <h2>No messages — empty container</h2>
+  <p>This second <code>&lt;drupal-messages&gt;</code> has no children. It is hidden
+     by <code>drupal-messages:empty { display: none }</code> — no JS, no
+     <code>data-drupal-messages-fallback</code>, no hidden placeholder div.</p>
+  <drupal-messages></drupal-messages>
+  <p><em>(nothing rendered above this line — the empty container is hidden)</em></p>
+
+  <p style="margin-top: 2rem"><a href="index.html">&larr; Back to htmx demo</a></p>
+
+  <script src="drupal-message.js"></script>
+</body>
+</html>

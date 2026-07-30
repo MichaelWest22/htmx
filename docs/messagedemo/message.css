@@ -1,0 +1,85 @@
+/* message.css — structural base and type styles for drupal-message */
+
+drupal-messages {
+  display: block;
+  margin-bottom: 1rem;
+}
+
+drupal-messages:empty {
+  display: none;
+}
+
+drupal-message {
+  display: flex;
+  align-items: flex-start;
+  gap: .75rem;
+  padding: .875rem 1rem;
+  border-left: 4px solid;
+  border-radius: 0 3px 3px 0;
+  margin-bottom: .5rem;
+  font-size: .9375rem;
+  line-height: 1.5;
+  position: relative;
+}
+
+drupal-message:last-child {
+  margin-bottom: 0;
+}
+
+/* Type variants */
+
+drupal-message[type="status"] {
+  background: #f3faf3;
+  border-color: #2e7d32;
+  color: #1b3a1c;
+}
+
+drupal-message[type="warning"] {
+  background: #fffbf0;
+  border-color: #e65100;
+  color: #4e2900;
+}
+
+drupal-message[type="error"] {
+  background: #fdf3f3;
+  border-color: #c62828;
+  color: #5f0000;
+}
+
+/* Icon */
+
+[data-message-icon] {
+  flex-shrink: 0;
+  width: 1.25rem;
+  height: 1.25rem;
+  margin-top: .1rem;
+}
+
+drupal-message[type="status"]  [data-message-icon] { color: #2e7d32; }
+drupal-message[type="warning"] [data-message-icon] { color: #e65100; }
+drupal-message[type="error"]   [data-message-icon] { color: #c62828; }
+
+/* Content */
+
+[data-message-content] {
+  flex: 1 1 auto;
+}
+
+/* Close button */
+
+[data-message-close] {
+  flex-shrink: 0;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  line-height: 1;
+  color: inherit;
+  opacity: .6;
+  font-size: 1.1rem;
+  margin-left: auto;
+  align-self: flex-start;
+}
+
+[data-message-close]:hover { opacity: 1; }
+[data-message-close]:focus-visible { outline: 2px solid currentColor; outline-offset: 2px; border-radius: 2px; }

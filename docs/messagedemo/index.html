@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>message demo — &lt;drupal-message&gt; custom element</title>
+  <link rel="stylesheet" href="message.css">
+  <style>
+    body { font-family: sans-serif; max-width: 760px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+    button { padding: .4rem .9rem; cursor: pointer; }
+    code   { background: #f3f4f9; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    .approach {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .9rem; line-height: 1.6;
+    }
+    #demo-content {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-top: .75rem; font-size: .9rem; line-height: 1.6;
+      min-height: 3rem;
+    }
+    #wire-log { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem; }
+    #wire-log h2 { margin-top: 0; }
+    #wire-output {
+      white-space: pre-wrap; word-break: break-all;
+      font-family: monospace; font-size: .8rem;
+      background: #1e1e1e; color: #d4d4d4;
+      padding: 1rem; border-radius: 4px;
+      max-height: 300px; overflow-y: auto;
+    }
+    #wire-output .entry { border-bottom: 1px solid #333; padding-bottom: .75rem; margin-bottom: .75rem; }
+    #wire-output .entry:last-child { border-bottom: 0; margin-bottom: 0; }
+    #wire-output .label { color: #569cd6; margin-bottom: .25rem; }
+    #wire-clear { font-size: .75rem; float: right; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1><code>&lt;drupal-message&gt;</code> custom element demo</h1>
+
+  <div class="approach">
+    <strong>Approach:</strong> <code>&lt;drupal-messages&gt;</code> is a persistent
+    container — always present, always empty between requests, stable htmx target.
+    <code>&lt;drupal-message type="..."&gt;</code> is the individual item — server-rendered,
+    delivered by <code>&lt;hx-partial hx-target="drupal-messages"&gt;</code>, owns
+    announcement, close wiring, and auto-dismiss. No JS message registry, no
+    <code>Drupal.Message</code> class, no JS-constructed HTML. Type styling is pure CSS
+    attribute selectors — no per-type container grouping needed.
+    <br><br>
+    Open the browser console to see <code>announce</code> calls that would go to
+    <code>Drupal.announce()</code> in a real Drupal page.
+  </div>
+
+  <!-- The persistent message container. Always present. Always empty in the
+       server-rendered template. hx-partial targets this element by name. -->
+  <drupal-messages></drupal-messages>
+
+  <h2>Append — <code>hx-swap="beforeend"</code></h2>
+  <p>Each button appends a new <code>&lt;drupal-message&gt;</code> into the container.
+     Messages accumulate — click multiple times or mix types.</p>
+  <div class="row">
+    <button hx-action="fragments/status.html">Status</button>
+    <button hx-action="fragments/warning.html">Warning</button>
+    <button hx-action="fragments/error.html">Error</button>
+  </div>
+
+  <h2>Multiple messages in one response</h2>
+  <p>One server response emits three <code>&lt;hx-partial&gt;</code> tags — two errors
+     and a warning. Each lands as a separate <code>&lt;drupal-message&gt;</code> in order.
+     <code>connectedCallback</code> fires on each and announces them individually.</p>
+  <div class="row">
+    <button hx-action="fragments/multiple.html">Two errors + warning</button>
+  </div>
+
+  <h2>Replace — clear then append</h2>
+  <p>Two partials in one response: first <code>hx-swap="innerHTML"</code> with empty
+     content clears the container, then <code>hx-swap="beforeend"</code> appends the
+     new message. The server decides — no JS flag needed.</p>
+  <div class="row">
+    <button hx-action="fragments/status.html">Add some messages first</button>
+    <button hx-action="fragments/replace.html">Replace (clear + add)</button>
+  </div>
+
+  <h2>Server-driven clear</h2>
+  <p>Single partial with <code>hx-swap="innerHTML"</code> and empty content. All
+     <code>&lt;drupal-message&gt;</code> children are removed.
+     <code>disconnectedCallback</code> fires on each, clearing any auto-dismiss timers.</p>
+  <div class="row">
+    <button hx-action="fragments/multiple.html">Add messages first</button>
+    <button hx-action="fragments/clear.html">Clear all</button>
+  </div>
+
+  <h2>Auto-dismiss — <code>data-auto-dismiss</code></h2>
+  <p><code>connectedCallback</code> reads <code>data-auto-dismiss</code> and sets a
+     <code>setTimeout</code>. The element self-removes after the delay.
+     <code>disconnectedCallback</code> clears the timer if the element is removed
+     earlier by a close click or a server clear.</p>
+  <div class="row">
+    <button hx-action="fragments/auto-dismiss.html">Auto-dismiss in 3s</button>
+  </div>
+
+  <h2>Piggyback on any response</h2>
+  <p>The message partial is independent of the main content swap. The response
+     updates <code>#demo-content</code> via one partial and delivers a message via
+     another — the server appends both to the same response body. The trigger button
+     knows nothing about either target.</p>
+  <div id="demo-content">
+    <p>This area will be updated by the main content swap.</p>
+  </div>
+  <div class="row">
+    <button hx-action="fragments/piggyback.html">Save (updates content + adds message)</button>
+  </div>
+
+  <h2>Full page load</h2>
+  <p>On a full page load the server pre-populates <code>&lt;drupal-messages&gt;</code>
+     directly in the HTML — no htmx, no partials. <code>connectedCallback</code> fires
+     on each <code>&lt;drupal-message&gt;</code> as the browser parses the page, same
+     code path as the htmx delivery.</p>
+  <div class="row">
+    <a href="page2.html"><button type="button">Full page load with messages &rarr;</button></a>
+  </div>
+
+  <div id="wire-log">
+    <h2>Wire log <button id="wire-clear">Clear</button></h2>
+    <div id="wire-output"></div>
+  </div>
+
+  <script src="htmx.js"></script>
+  <script src="drupal-message.js"></script>
+  <script>
+    const output = document.getElementById('wire-output');
+    let count = 0;
+    document.addEventListener('htmx:after:request', (e) => {
+      const { ctx } = e.detail;
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML = `<div class="label">#${++count} ${ctx.request.action}</div>${escHtml(ctx.text)}`;
+      output.appendChild(entry);
+      output.scrollTop = output.scrollHeight;
+    });
+    document.getElementById('wire-clear').addEventListener('click', () => {
+      output.replaceChildren(); count = 0;
+    });
+    function escHtml(s) {
+      return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+  </script>
+</body>
+</html>
