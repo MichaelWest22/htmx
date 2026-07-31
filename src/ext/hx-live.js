@@ -112,11 +112,7 @@
             if (!e) return undefined;
             if (isClass) return e.classList.contains(name.slice(1));
             if (isMultiClass) return e.getAttribute('class');
-            if (isAria) {
-                let val = e.getAttribute(name);
-                if (val == null) return null;
-                try { return JSON.parse(val); } catch { return val; }
-            }
+            if (isAria) return makeAriaProxy(e, false)[name.slice(5)];
             if (BOOLEAN_ATTRS.has(name)) return e.hasAttribute(name);
             if (isPropAttr) return e[name];
             return e.getAttribute(name);
@@ -130,8 +126,7 @@
             } else if (isMultiClass) {
                 applyMultiClass(e, value);
             } else if (isAria) {
-                if (value == null) e.removeAttribute(name);
-                else e.setAttribute(name, String(value));
+                makeAriaProxy(e, false)[name.slice(5)] = value;
             } else if (isPropAttr) {
                 if (value === false || value == null) {
                     e[name] = (typeof e[name] === 'boolean') ? false : '';
@@ -189,6 +184,27 @@
 
     function camelToKebab(s) {
         return s.replace(/[A-Z]/g, m => '-' + m.toLowerCase());
+    }
+
+    function makeAriaProxy(elt, cascades = true) {
+        return new Proxy({}, {
+            get: (_, prop) => {
+                if (typeof prop !== 'string') return undefined;
+                let name = 'aria-' + prop.toLowerCase();
+                let owner = cascades ? elt.closest('[' + name + ']') : elt;
+                let val = owner?.getAttribute(name);
+                if (val == null) return null;
+                try { return JSON.parse(val); } catch { return val; }
+            },
+            set: (_, prop, value) => {
+                if (typeof prop !== 'string') return false;
+                let name = 'aria-' + prop.toLowerCase();
+                let target = (cascades ? elt.closest('[' + name + ']') : null) || elt;
+                if (value == null) target.removeAttribute(name);
+                else target.setAttribute(name, String(value));
+                return true;
+            }
+        });
     }
 
     // `data.foo` reads/writes to closest ancestor with `data-foo`.
@@ -468,6 +484,7 @@
                     return proxy;
                 };
                 if (p === 'data') return elts[0] ? makeDataProxy(elts[0]) : undefined;
+                if (p === 'aria') return elts[0] ? makeAriaProxy(elts[0], false) : undefined;
                 if (arrayMethods.has(p)) return elts[p].bind(elts);
                 let v = elts[0]?.[p];
                 if (typeof v === 'function') return (...a) => elts.map(e => e[p](...a))[0];
@@ -668,7 +685,8 @@
                 matches: (sel) => elt.matches(sel),
                 style: elt.style,
                 classList: elt.classList,
-                data: makeDataProxy(elt)
+                data: makeDataProxy(elt),
+                aria: makeAriaProxy(elt)
             });
         }
     });
