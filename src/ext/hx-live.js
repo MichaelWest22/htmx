@@ -112,7 +112,11 @@
             if (!e) return undefined;
             if (isClass) return e.classList.contains(name.slice(1));
             if (isMultiClass) return e.getAttribute('class');
-            if (isAria) return e.getAttribute(name) === 'true';
+            if (isAria) {
+                let val = e.getAttribute(name);
+                if (val == null) return null;
+                try { return JSON.parse(val); } catch { return val; }
+            }
             if (BOOLEAN_ATTRS.has(name)) return e.hasAttribute(name);
             if (isPropAttr) return e[name];
             return e.getAttribute(name);
@@ -126,13 +130,8 @@
             } else if (isMultiClass) {
                 applyMultiClass(e, value);
             } else if (isAria) {
-                // Strings and numbers pass through (e.g. aria-current="page",
-                // aria-pressed="mixed", aria-valuenow="50"). Other values coerce
-                // to "true"/"false". Never removed.
-                let attrVal = (typeof value === 'string' || typeof value === 'number')
-                    ? String(value)
-                    : (value ? 'true' : 'false');
-                e.setAttribute(name, attrVal);
+                if (value == null) e.removeAttribute(name);
+                else e.setAttribute(name, String(value));
             } else if (isPropAttr) {
                 if (value === false || value == null) {
                     e[name] = (typeof e[name] === 'boolean') ? false : '';

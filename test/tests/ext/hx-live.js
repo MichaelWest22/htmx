@@ -984,10 +984,21 @@ describe('hx-live extension', function () {
         htmx.live.attr('#b', 'disabled').should.equal(false);
     });
 
-    it('attr() getter: ARIA returns boolean from "true"/"false"', function() {
-        playground().innerHTML = '<div id="a" aria-expanded="true"></div><div id="b" aria-expanded="false"></div>';
+    it('attr() getter: ARIA returns typed values or null', function() {
+        playground().innerHTML = `
+            <div id="a" aria-expanded="true"></div>
+            <div id="b" aria-expanded="false"></div>
+            <div id="c" aria-current="page"></div>
+            <div id="d" aria-valuenow="50"></div>
+            <div id="e" aria-controls="menu help"></div>
+            <div id="f"></div>
+        `;
         htmx.live.attr('#a', 'aria-expanded').should.equal(true);
         htmx.live.attr('#b', 'aria-expanded').should.equal(false);
+        htmx.live.attr('#c', 'aria-current').should.equal('page');
+        htmx.live.attr('#d', 'aria-valuenow').should.equal(50);
+        htmx.live.attr('#e', 'aria-controls').should.equal('menu help');
+        assert.isNull(htmx.live.attr('#f', 'aria-label'));
     });
 
     it('attr() getter: .class returns boolean (has class)', function() {
@@ -1029,16 +1040,15 @@ describe('hx-live extension', function () {
         playground().querySelector('#a').hasAttribute('disabled').should.equal(false);
     });
 
-    it('attr() setter: ARIA writes "true"/"false", never removes', function() {
+    it('attr() setter: ARIA stringifies values and null removes', function() {
         playground().innerHTML = '<div id="a"></div>';
         let div = playground().querySelector('#a');
         htmx.live.attr('#a', 'aria-expanded', true);
         div.getAttribute('aria-expanded').should.equal('true');
         htmx.live.attr('#a', 'aria-expanded', false);
         div.getAttribute('aria-expanded').should.equal('false');
-        // null/undefined also writes "false". ARIA is never removed.
         htmx.live.attr('#a', 'aria-expanded', null);
-        div.getAttribute('aria-expanded').should.equal('false');
+        div.hasAttribute('aria-expanded').should.equal(false);
     });
 
     it('attr() setter: aria-* strings and numbers pass through', function() {
@@ -1631,7 +1641,7 @@ describe('hx-live extension', function () {
         btn.hasAttribute('disabled').should.equal(true);
     });
 
-    it(':aria-expanded writes "true"/"false", never removes', async function() {
+    it(':aria-expanded writes boolean strings', async function() {
         playground().innerHTML = `
             <input id="src" type="checkbox">
             <button :aria-expanded="q('#src').checked">x</button>
