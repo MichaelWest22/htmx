@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pagination Boost Test - Page 1</title>
+    <meta name="htmx-config" content='{"prefix": "data-hx-", "defaultSwap": "outerHTML", "implicitInheritance": true, "transitions": true}'>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/htmx.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2em auto; }
+        .table-container { border: 2px solid #ccc; padding: 1em; margin: 1em 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .pagination { list-style: none; padding: 0; display: flex; gap: 8px; margin-top: 1em; }
+        .pagination a { padding: 4px 12px; border: 1px solid #07c; color: #07c; text-decoration: none; }
+        .pagination a.active { background: #07c; color: white; }
+        .htmx-request { opacity: 0.5; }
+        #content { border: 2px dashed green; padding: 1em; }
+        #alerts { background: #ffe0e0; padding: 0.5em; margin-bottom: 1em; }
+        #breadcrumb { background: #e0e0ff; padding: 0.5em; margin-bottom: 1em; }
+        #notifications { background: #e0ffe0; padding: 0.5em; margin-bottom: 1em; }
+    </style>
+</head>
+<body>
+
+<h1>Pagination Boost Test</h1>
+<p>Reproduces the user's exact setup with multiple tables and pagination.</p>
+
+<div id="alerts">Alerts - Page 1</div>
+<div id="breadcrumb">Breadcrumb - Page 1</div>
+<div id="notifications">Notifications - Page 1</div>
+
+<section class="content">
+<div id="content">
+    <div class="table-container">
+        <table class="rows" data-hx-boost="true" data-hx-target="#content" data-hx-select="#content" data-hx-swap="outerHTML scroll:#content:top" data-hx-push-url="true" data-hx-select-oob="#alerts, #breadcrumb, #notifications" id="venuevisit_list">
+            <thead>
+                <tr>
+                    <th class="orderable">
+                        <a href="page1.html?table_1-sort=profile" data-htmx-powered="true">Profile</a>
+                    </th>
+                    <th class="orderable">
+                        <a href="page1.html?table_1-sort=date" data-htmx-powered="true">Date</a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>User A</td><td>2024-01-01</td></tr>
+                <tr><td>User B</td><td>2024-01-02</td></tr>
+                <tr><td>User C</td><td>2024-01-03</td></tr>
+            </tbody>
+        </table>
+
+        <ul id="pagination-venuevisit_list" class="pagination" data-hx-history="false" data-hx-boost="true" data-hx-target="#venuevisit_list" data-hx-select="#venuevisit_list" data-hx-swap="outerMorph scroll:top scrollTarget:#venuevisit_list" data-hx-push-url="true" data-hx-select-oob="#pagination-venuevisit_list">
+            <li>
+                <a href="page1.html" class="active" data-htmx-powered="true">1</a>
+            </li>
+            <li>
+                <a href="page2.html" data-htmx-powered="true">2</a>
+            </li>
+            <li>
+                <a href="page3.html" data-htmx-powered="true">3</a>
+            </li>
+        </ul>
+    </div>
+</div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Pagination Boost Test (Advanced) - Page 1</title>
+    <meta name="htmx-config" content='{"prefix": "data-hx-", "defaultSwap": "outerHTML", "transitions": true}'>
+    <script src="https://cdn.jsdelivr.net/npm/htmx.org@4.0.0-beta6/dist/htmx.min.js"></script>
+    <style>
+        body { font-family: sans-serif; max-width: 800px; margin: 2em auto; }
+        .table-container { border: 2px solid #ccc; padding: 1em; margin: 1em 0; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #ddd; padding: 8px; text-align: left; }
+        th { background: #f5f5f5; }
+        .pagination { list-style: none; padding: 0; display: flex; gap: 8px; margin-top: 1em; }
+        .pagination a { padding: 4px 12px; border: 1px solid #07c; color: #07c; text-decoration: none; }
+        .pagination a.active { background: #07c; color: white; }
+        .htmx-request { opacity: 0.5; }
+        #content { border: 2px dashed green; padding: 1em; }
+        #alerts { background: #ffe0e0; padding: 0.5em; margin-bottom: 1em; }
+        #breadcrumb { background: #e0e0ff; padding: 0.5em; margin-bottom: 1em; }
+        #notifications { background: #e0ffe0; padding: 0.5em; margin-bottom: 1em; }
+    </style>
+</head>
+<body>
+
+<h1>Pagination Boost Test (Advanced hx-boost)</h1>
+<p>Uses <code>hx-boost:inherited</code> with config strings instead of separate hx-* attributes.</p>
+
+<div id="alerts">Alerts - Page 1</div>
+<div id="breadcrumb">Breadcrumb - Page 1</div>
+<div id="notifications">Notifications - Page 1</div>
+
+<section class="content">
+<div id="content">
+    <div class="table-container">
+        <!-- Table links: target #content, select #content, OOB swap alerts/breadcrumb/notifications -->
+        <table class="rows" id="venuevisit_list"
+               data-hx-boost:inherited="swap:outerHTML target:#content select:#content selectOob:'#alerts, #breadcrumb, #notifications' scroll:top scrollTarget:#content">
+            <thead>
+                <tr>
+                    <th class="orderable">
+                        <a href="adv-page1.html?table_1-sort=profile">Profile</a>
+                    </th>
+                    <th class="orderable">
+                        <a href="adv-page1.html?table_1-sort=date">Date</a>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr><td>User A</td><td>2024-01-01</td></tr>
+                <tr><td>User B</td><td>2024-01-02</td></tr>
+                <tr><td>User C</td><td>2024-01-03</td></tr>
+            </tbody>
+        </table>
+
+        <!-- Pagination links: target #venuevisit_list, select #venuevisit_list, OOB swap pagination itself -->
+        <ul id="pagination-venuevisit_list" class="pagination"
+            data-hx-boost:inherited="swap:outerMorph target:#venuevisit_list select:#venuevisit_list selectOob:#pagination-venuevisit_list scroll:top scrollTarget:#venuevisit_list">
+            <li>
+                <a href="adv-page1.html" class="active">1</a>
+            </li>
+            <li>
+                <a href="adv-page2.html">2</a>
+            </li>
+            <li>
+                <a href="adv-page3.html">3</a>
+            </li>
+        </ul>
+    </div>
+</div>
+</section>
+
+</body>
+</html>
