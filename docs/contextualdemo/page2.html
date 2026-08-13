@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>contextual demo — full page load</title>
+  <link rel="stylesheet" href="contextual.css">
+  <style>
+    body { font-family: sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    code { background: #f3f4f9; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    .approach {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .9rem; line-height: 1.6;
+    }
+    .block {
+      border: 1px solid #ddd; border-radius: 4px;
+      padding: 1rem 1.25rem; margin-bottom: 1rem;
+      background: #fff;
+    }
+    .block h2 { border: none; margin-top: 0; font-size: .95rem; color: #555; }
+    .block p  { margin: .5rem 0 0; font-size: .9rem; color: #333; }
+    a { color: #1a6496; }
+  </style>
+</head>
+<body>
+
+  <h1>Full page load — links pre-rendered by server</h1>
+
+  <div class="approach">
+    <strong>Full page path:</strong> when the page is not served from cache (e.g.
+    admin preview, or BigPipe disabled) the server can render the trigger button
+    and link list directly into <code>&lt;drupal-contextual&gt;</code> in the
+    initial HTML. No POST to <code>/contextual/render</code>, no
+    <code>&lt;hx-partial&gt;</code>, no batch trigger element.
+    <code>connectedCallback</code> fires on each <code>&lt;drupal-contextual&gt;</code>
+    as the browser parses the page and wires the open/close behaviour immediately —
+    the same code path as the htmx-delivered version.
+    <br><br>
+    The hidden inputs are absent — they are only needed for the batch POST path.
+    The element ID is still present so a subsequent partial can re-render the
+    region if needed (e.g. after an in-place config save).
+  </div>
+
+  <!-- Block with pre-rendered contextual links — no hidden inputs, no batch trigger -->
+  <div class="block contextual-region">
+    <h2>Tools menu</h2>
+    <p>Links to common admin tasks.</p>
+    <drupal-contextual id="ctx-a3f2b1c4">
+      <button class="trigger visually-hidden focusable" type="button" aria-pressed="false">
+        Open Tools menu configuration options
+      </button>
+      <ul class="contextual-links" hidden>
+        <li><a href="/admin/structure/block/manage/olivero_tools?destination=/node/1">Configure block</a></li>
+        <li><a href="/admin/structure/block/manage/olivero_tools/delete?destination=/node/1">Remove block</a></li>
+      </ul>
+    </drupal-contextual>
+  </div>
+
+  <div class="block contextual-region">
+    <h2>Latest article</h2>
+    <p>Drupal 11 is here.</p>
+    <drupal-contextual id="ctx-b5c6d7e8">
+      <button class="trigger visually-hidden focusable" type="button" aria-pressed="false">
+        Open Latest article configuration options
+      </button>
+      <ul class="contextual-links" hidden>
+        <li><a href="/node/42/edit?destination=/node/1">Edit content</a></li>
+        <li><a href="/node/42/delete?destination=/node/1">Delete content</a></li>
+        <li><a href="/admin/structure/block/manage/olivero_featured?destination=/node/1">Configure block</a></li>
+      </ul>
+    </drupal-contextual>
+  </div>
+
+  <!-- Block with no links — element present but hidden by CSS :not(:has(.trigger)) -->
+  <div class="block contextual-region">
+    <h2>Footer block</h2>
+    <p>User has no contextual link access — element is hidden by CSS.</p>
+    <drupal-contextual id="ctx-e3f4a5b6">
+      <!-- empty — server rendered nothing, CSS hides the element -->
+    </drupal-contextual>
+  </div>
+
+  <p style="margin-top:2rem"><a href="index.html">&larr; Back to htmx demo</a></p>
+
+  <script src="drupal-contextual.js"></script>
+</body>
+</html>

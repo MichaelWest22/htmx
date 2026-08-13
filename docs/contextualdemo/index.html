@@ -1,0 +1,262 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>contextual demo — &lt;drupal-contextual&gt; custom element</title>
+  <link rel="stylesheet" href="contextual.css">
+  <style>
+    body { font-family: sans-serif; max-width: 860px; margin: 2rem auto; padding: 0 1rem; }
+    h1   { font-size: 1.4rem; }
+    h2   { font-size: 1rem; margin-top: 2rem; border-bottom: 1px solid #ccc; padding-bottom: .25rem; }
+    code { background: #f3f4f9; padding: .1em .3em; border-radius: 3px; font-size: .9em; }
+    .approach {
+      background: #f9f9fb; border: 1px solid #ddd; border-radius: 4px;
+      padding: .75rem 1rem; margin-bottom: 1.5rem; font-size: .9rem; line-height: 1.6;
+    }
+    button { padding: .4rem .9rem; cursor: pointer; }
+    .row   { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: .75rem; }
+
+    /* Simulated Drupal blocks */
+    .block {
+      border: 1px solid #ddd; border-radius: 4px;
+      padding: 1rem 1.25rem; margin-bottom: 1rem;
+      background: #fff;
+    }
+    .block h2 { border: none; margin-top: 0; font-size: .95rem; color: #555; }
+    .block p  { margin: .5rem 0 0; font-size: .9rem; color: #333; }
+
+    .blocks-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 1rem;
+      margin-top: .75rem;
+    }
+
+    /* Toolbar edit-mode toggle */
+    #toolbar {
+      background: #333; color: #fff;
+      padding: .5rem 1rem; border-radius: 4px;
+      display: flex; align-items: center; gap: 1rem;
+      margin-bottom: 1.5rem; font-size: .875rem;
+    }
+    #toolbar button {
+      background: #555; color: #fff; border: 1px solid #777;
+      border-radius: 3px; padding: .25rem .75rem; cursor: pointer;
+    }
+    #toolbar button.active { background: #1a73e8; border-color: #1a73e8; }
+
+    #wire-log { margin-top: 2rem; border-top: 1px solid #ccc; padding-top: 1rem; }
+    #wire-log h2 { margin-top: 0; }
+    #wire-output {
+      white-space: pre-wrap; word-break: break-all;
+      font-family: monospace; font-size: .8rem;
+      background: #1e1e1e; color: #d4d4d4;
+      padding: 1rem; border-radius: 4px;
+      max-height: 300px; overflow-y: auto;
+    }
+    #wire-output .entry { border-bottom: 1px solid #333; padding-bottom: .75rem; margin-bottom: .75rem; }
+    #wire-output .entry:last-child { border-bottom: 0; margin-bottom: 0; }
+    #wire-output .label { color: #569cd6; margin-bottom: .25rem; }
+    #wire-output .params { color: #9cdcfe; margin: .25rem 0; line-height: 1.8; }
+    #wire-output .pk { color: #9cdcfe; }
+    #wire-output .pv { color: #ce9178; }
+    #wire-output .response { color: #d4d4d4; margin-top: .25rem; }
+    #wire-clear { font-size: .75rem; float: right; cursor: pointer; }
+  </style>
+</head>
+<body>
+
+  <h1><code>&lt;drupal-contextual&gt;</code> custom element demo</h1>
+
+  <div class="approach">
+    <strong>Approach:</strong> each <code>&lt;drupal-contextual&gt;</code> is a light
+    DOM custom element. On page load it is an invisible placeholder carrying its
+    contextual ID as <code>name</code> and HMAC token as <code>value</code> attributes.
+    A single <code>&lt;drupal-contextual-loader&gt;</code> element collects all of them via
+    <code>hx-include</code> and fires one batch GET to <code>/contextual/render</code>.
+    htmx treats custom elements with <code>name</code>/<code>value</code> as form inputs,
+    so no hidden <code>&lt;input&gt;</code> children are needed.
+    The server validates each HMAC token and returns one <code>&lt;hx-partial
+    hx-swap="outerHTML"&gt;</code> per region, each wrapping a fully-rendered
+    <code>&lt;drupal-contextual&gt;</code>. The browser replaces the placeholder
+    element, <code>connectedCallback</code> fires on the new element, and the
+    open/close behaviour is wired — no JS fetch loop, no <code>sessionStorage</code>,
+    no JSON parsing, no manual DOM routing.
+    <br><br>
+    On success the server also returns
+    <code>&lt;hx-partial hx-target="drupal-contextual-loader" hx-swap="delete"&gt;</code>
+    which removes the loader and stops polling. On a 5xx the loader stays, retries
+    every 5s, and only re-requests the still-unresolved regions via
+    <code>hx-include="drupal-contextual:not(:has(.trigger))"</code>.
+    htmx detects the hyphenated tag name and reads <code>name</code>/<code>value</code>
+    directly off the element — a <code>get value()</code> getter in the class returns
+    the attribute. No hidden <code>&lt;input&gt;</code> children needed.
+    <br><br>
+    Hover over a block to reveal its pencil trigger. The wire log shows the raw responses.
+  </div>
+
+  <!-- Simulated toolbar -->
+  <div id="toolbar">
+    <span>Drupal toolbar</span>
+    <button id="edit-toggle" type="button">Edit mode: off</button>
+    <span id="edit-hint" style="font-size:.8rem;color:#aaa">
+      Edit mode pins all triggers visible
+    </span>
+  </div>
+
+  <h2>Batch load — one request, all regions</h2>
+  <p>On page load <code>&lt;drupal-contextual-loader&gt;</code> collects all unresolved
+     placeholders via
+     <code>hx-include="drupal-contextual:not(:has(.trigger))"</code> and fires
+     one GET. Each element's <code>name</code> is the contextual ID and <code>value</code>
+     is its HMAC token — htmx reads them directly off the custom element. The response delivers four <code>&lt;hx-partial hx-swap="outerHTML"&gt;</code>
+     tags plus a delete partial that removes the loader. Each replaced element's
+     <code>connectedCallback</code> wires its open/close behaviour immediately.</p>
+
+  <div class="blocks-grid">
+
+    <!-- Block 1: Tools menu -->
+    <div class="block contextual-region">
+      <h2>Tools menu</h2>
+      <p>Links to common admin tasks.</p>
+      <drupal-contextual id="ctx-a3f2b1c4"
+        name="block:block=olivero.tools:langcode=en"
+        value="mK9xQzP2rT5vNwL8"></drupal-contextual>
+    </div>
+
+    <!-- Block 2: Search -->
+    <div class="block contextual-region">
+      <h2>Search</h2>
+      <p>Site-wide search form.</p>
+      <drupal-contextual id="ctx-d7e8f901"
+        name="block:block=olivero.search:langcode=en"
+        value="nR4yWsL6jH2mXpK0"></drupal-contextual>
+    </div>
+
+    <!-- Block 3: Node (two link groups — block + node) -->
+    <div class="block contextual-region">
+      <h2>Latest article</h2>
+      <p>Drupal 11 is here.</p>
+      <drupal-contextual id="ctx-b5c6d7e8"
+        name="node:node=42:langcode=en|block:block=olivero.featured:langcode=en"
+        value="pQ7rSt3uVw1xYz9A"></drupal-contextual>
+    </div>
+
+    <!-- Block 4: Views block -->
+    <div class="block contextual-region">
+      <h2>Recent content</h2>
+      <p>A views-generated list.</p>
+      <drupal-contextual id="ctx-f9a0b1c2"
+        name="views_ui_edit:view=recent_content:location=block&amp;view_name=recent_content&amp;view_display_id=block_1&amp;langcode=en"
+        value="hJ5kLm8nOp2qRs4T"></drupal-contextual>
+    </div>
+
+  </div>
+
+  <!-- Batch trigger — fires on load, retries every 5s while unresolved placeholders exist.
+       Server deletes this element via <hx-partial hx-target="drupal-contextual-loader" hx-swap="delete">
+       once all regions are resolved. -->
+  <drupal-contextual-loader
+    hx-get="fragments/batch.html"
+    hx-trigger="load, every 5s"
+    hx-include="drupal-contextual:not(:has(.trigger))"
+    hx-swap="none"
+  ></drupal-contextual-loader>
+
+  <h2>Re-render a single region</h2>
+  <p>After an admin action the server returns a single
+     <code>&lt;hx-partial hx-swap="outerHTML"&gt;</code> for just the affected region.
+     The old element is replaced, <code>connectedCallback</code> re-fires on the new
+     one, and the other three regions are untouched.</p>
+  <div class="row">
+    <button hx-get="fragments/rerender-one.html" hx-swap="none">
+      Re-render Tools block
+    </button>
+  </div>
+
+  <h2>No links — access denied</h2>
+  <p>When the user has no access the server returns an empty <code>&lt;hx-partial&gt;</code>
+     (default <code>innerHTML</code> swap). The <code>&lt;drupal-contextual&gt;</code>
+     element stays in the DOM but empty, hidden by
+     <code>drupal-contextual:not(:has(.trigger)) { display:none }</code> — no JS needed.
+     It is also excluded from any retry request by
+     <code>hx-include="drupal-contextual:not(:has(.trigger))"</code> since the
+     resolved element has no <code>name</code> attribute.</p>
+  <div class="blocks-grid">
+    <div class="block contextual-region">
+      <h2>Footer block</h2>
+      <p>User has no contextual link access.</p>
+      <drupal-contextual id="ctx-e3f4a5b6"
+        name="block:block=olivero.footer:langcode=en"
+        value="uV6wXy8zA0bCd2Ef"></drupal-contextual>
+    </div>
+    <div style="display:flex;align-items:center;font-size:.875rem;color:#666;padding:.5rem">
+      ← empty partial returned, element stays hidden
+    </div>
+  </div>
+  <div class="row">
+    <button hx-get="fragments/access-denied.html" hx-swap="none">
+      Simulate access-denied response
+    </button>
+  </div>
+
+  <h2>Full page load with pre-rendered links</h2>
+  <p>When the page is not cached the server renders the trigger button and link list
+     directly into <code>&lt;drupal-contextual&gt;</code> in the initial HTML — no
+     loader element, no GET request. <code>connectedCallback</code> fires as the
+     browser parses each element and wires the behaviour immediately. Same code path,
+     same element, no special case.</p>
+  <div class="row">
+    <a href="page2.html"><button type="button">Full page load &rarr;</button></a>
+  </div>
+
+  <div id="wire-log">
+    <h2>Wire log <button id="wire-clear">Clear</button></h2>
+    <div id="wire-output"></div>
+  </div>
+
+  <script src="htmx.js"></script>
+  <script src="drupal-contextual.js"></script>
+  <script>
+    // Wire log
+    const output = document.getElementById('wire-output');
+    let count = 0;
+    document.addEventListener('htmx:after:request', (e) => {
+      const { ctx } = e.detail;
+      const url = new URL(ctx.request.action, location.href);
+      const params = [...url.searchParams.entries()];
+      const paramsHtml = params.length
+        ? '<div class="params">' +
+          params.map(([k, v]) => `<span class="pk">${escHtml(k)}</span> = <span class="pv">${escHtml(v)}</span>`).join('\n') +
+          '</div>'
+        : '';
+      const entry = document.createElement('div');
+      entry.className = 'entry';
+      entry.innerHTML =
+        `<div class="label">#${++count} ${ctx.request.method} ${escHtml(url.pathname)}</div>` +
+        paramsHtml +
+        `<div class="response">${escHtml(ctx.text)}</div>`;
+      output.appendChild(entry);
+      output.scrollTop = output.scrollHeight;
+    });
+    document.getElementById('wire-clear').addEventListener('click', () => {
+      output.replaceChildren(); count = 0;
+    });
+    function escHtml(s) {
+      return (s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+
+    // Toolbar edit-mode toggle — sets/removes `locked` on all drupal-contextual elements
+    const editToggle = document.getElementById('edit-toggle');
+    let editMode = false;
+    editToggle.addEventListener('click', () => {
+      editMode = !editMode;
+      editToggle.textContent = `Edit mode: ${editMode ? 'on' : 'off'}`;
+      editToggle.classList.toggle('active', editMode);
+      document.querySelectorAll('drupal-contextual').forEach(el => {
+        el.toggleAttribute('locked', editMode);
+      });
+    });
+  </script>
+</body>
+</html>
