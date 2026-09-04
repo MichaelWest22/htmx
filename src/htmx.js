@@ -601,6 +601,10 @@ var htmx = (function() {
    * @returns {DocumentFragmentWithTitle}
    */
   function makeFragment(response) {
+    // convert <hx-*> custom tags to <template hx type="*"> so they survive HTML parsing
+    response = response
+      .replace(/<hx-([a-z]+)((?:\s[^>]*)?)>/gi, '<template hx type="$1"$2>')
+      .replace(/<\/hx-[a-z]+>/gi, '</template>')
     // strip head tag to determine shape of response we are dealing with
     const responseWithNoHead = response.replace(/<head(\s[^>]*)?>[\s\S]*?<\/head>/i, '')
     const startTag = getStartTag(responseWithNoHead)
@@ -1520,10 +1524,11 @@ var htmx = (function() {
         }
       )
     } else {
-      oobElement.parentNode.removeChild(oobElement)
+      if (oobElement.parentNode) oobElement.parentNode.removeChild(oobElement)
       triggerErrorEvent(getDocument().body, 'htmx:oobErrorNoTarget', { content: oobElement, target: selector })
+      return oobValue
     }
-    oobElement.parentNode.removeChild(oobElement)
+    if (oobElement.parentNode) oobElement.parentNode.removeChild(oobElement)
     return oobValue
   }
 
@@ -1862,6 +1867,44 @@ var htmx = (function() {
   }
 
   /**
+   * Finds all <template hx type="..."> elements in a fragment, fires htmx:beforeProcessHxTemplate
+   * for each so extensions can handle custom types, executes partial swaps for type="partial",
+   * and removes all hx templates from the fragment.
+   * Returns true if any hx templates were found (used to prevent empty main swap).
+   *
+   * @param {DocumentFragment|ParentNode} fragment
+   * @param {HtmxSettleInfo} settleInfo
+   * @param {Element} sourceElement the triggering element, used to resolve extended selectors
+   * @returns {boolean}
+   */
+  function findAndSwapPartials(fragment, settleInfo, sourceElement) {
+    var hxTemplates = findAll(fragment, 'template[hx]')
+    forEach(hxTemplates, function(template) {
+      var type = getRawAttribute(template, 'type')
+      // fire event for every hx template — extensions can handle custom types via this hook
+      triggerEvent(sourceElement || getDocument().body, 'htmx:beforeProcessHxTemplate', { template: template, type: type, sourceElement: sourceElement })
+      if (type === 'partial') {
+        var targetSelector = getAttributeValue(template, 'hx-target') ||
+          (template.id ? '#' + CSS.escape(template.id) : null)
+        if (targetSelector) {
+          var swapOverride = getAttributeValue(template, 'hx-swap')
+          var swapSpec = getSwapSpecification(template, swapOverride, {})
+          if (!swapSpec.swapStyle) swapSpec.swapStyle = htmx.config.defaultSwapStyle
+          var targets = querySelectorAllExt(sourceElement || getDocument().body, targetSelector, false)
+          forEach(targets, function(target) {
+            target = asElement(target)
+            if (target) {
+              swap(target, template.content.cloneNode(true), swapSpec, { contextElement: target }, settleInfo)
+            }
+          })
+        }
+      }
+      template.parentNode.removeChild(template)
+    })
+    return hxTemplates.length > 0
+  }
+
+  /**
    * @param {DocumentFragment|ParentNode} fragment
    * @param {HtmxSettleInfo} settleInfo
    * @param {Node|Document} [rootNode]
@@ -1939,6 +1982,8 @@ var htmx = (function() {
           fragment = fragment.querySelector('[hx-history-elt],[data-hx-history-elt]') || fragment
         }
 
+        var hasPartials = false
+
         if (!isOOBSwap) {
           // select-oob swaps
           if (swapOptions.selectOOB) {
@@ -1967,6 +2012,8 @@ var htmx = (function() {
               template.remove()
             }
           })
+          // partial swaps — after oob, before main swap
+          hasPartials = findAndSwapPartials(fragment, settleInfo, swapOptions.contextElement || asElement(target))
         }
 
         // normal swap
@@ -1981,7 +2028,12 @@ var htmx = (function() {
           fragment = fragment.firstElementChild
         }
         handlePreservedElements(fragment)
-        swapWithStyle(swapSpec.swapStyle, swapOptions.contextElement, target, fragment, settleInfo)
+        // if the response contained only <hx-partial> tags and nothing else, skip the main swap
+        if (hasPartials && !fragment.childElementCount && !fragment.textContent.trim()) {
+          settleInfo.elts = [asElement(target)]
+        } else {
+          swapWithStyle(swapSpec.swapStyle, swapOptions.contextElement, target, fragment, settleInfo)
+        }
         restorePreservedElements()
       }
 
