@@ -1524,11 +1524,11 @@ var htmx = (function() {
         }
       )
     } else {
-      if (oobElement.parentNode) oobElement.parentNode.removeChild(oobElement)
+      oobElement.parentNode?.removeChild(oobElement)
       triggerErrorEvent(getDocument().body, 'htmx:oobErrorNoTarget', { content: oobElement, target: selector })
       return oobValue
     }
-    if (oobElement.parentNode) oobElement.parentNode.removeChild(oobElement)
+    oobElement.parentNode?.removeChild(oobElement)
     return oobValue
   }
 
