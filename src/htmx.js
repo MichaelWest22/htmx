@@ -545,10 +545,11 @@ var htmx = (() => {
             let requestQueue = this.__getRequestQueue(elt);
             this.__initializeAbortListener(elt);
 
+            let replaced = false
             if (requestQueue.admit(
                 syncStrategy,
                 () => this.__issueRequest(ctx), // run when ready
-                () => ctx.request?.abort?.()    // abort if replaced
+                () => { replaced = true; ctx.request?.abort?.() } // abort if replaced
             ) !== "run") return
 
             ctx.status = "issuing"
@@ -626,7 +627,7 @@ var htmx = (() => {
                     this.__enableElements(disableElements);
                 }
 
-                requestQueue.continue()
+                if (!replaced) requestQueue.continue()
             }
         }
 

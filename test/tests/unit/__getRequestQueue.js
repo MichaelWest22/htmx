@@ -341,6 +341,36 @@ describe('__getRequestQueue / RequestQueue unit tests', function() {
         assert.equal(htmx.__getRequestQueue(a), htmx.__getRequestQueue(b))
     })
 
+    for (let strategy of ['replace', 'abort']) {
+        it(`stale continue() from a replaced ${strategy} request does not free the queue slot`, async function () {
+            let div = createProcessedHTML('<div hx-get="/test"></div>')
+            let queue = htmx.__getRequestQueue(div)
+            let cleanup
+
+            // Simulate __issueRequest for A: replaced flag guards the continue() call
+            let replacedA = false
+            assert.equal(queue.admit(strategy, noop, () => { replacedA = true }), 'run')
+            cleanup = Promise.resolve().then(() => { if (!replacedA) queue.continue() })
+
+            // B replaces A — sets replacedA = true, becomes active
+            let secondAborted = false
+            assert.equal(queue.admit('replace', noop, () => { secondAborted = true }), 'run')
+
+            // C queues behind B
+            let queuedStarted = false
+            assert.equal(queue.admit('queue all', () => { queuedStarted = true }, noop), 'queued')
+
+            // A's stale cleanup fires — replaced flag prevents queue.continue()
+            await cleanup
+
+            // C must not have started — B is still active
+            assert.isFalse(queuedStarted)
+            // B is still active: slot is occupied, so drop is dropped and B is not aborted
+            assert.equal(queue.admit('drop', noop, noop), 'dropped')
+            assert.isFalse(secondAborted)
+        })
+    }
+
     it('replace strategy clears queued requests when aborting current', function () {
         let div = createProcessedHTML('<div hx-get="/test"></div>')
         let queue = htmx.__getRequestQueue(div)
