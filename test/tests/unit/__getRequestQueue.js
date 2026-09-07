@@ -115,6 +115,18 @@ describe('__getRequestQueue / RequestQueue unit tests', function() {
         assert.equal(queue.admit('queue first', noop, noop), 'run')
     })
 
+    it('abort clears the slot so the queue can advance', function () {
+        let div = createProcessedHTML('<div hx-get="/test"></div>')
+        let queue = htmx.__getRequestQueue(div)
+        let nextStarted = false
+
+        queue.admit('queue first', noop, noop)
+        queue.admit('queue first', () => { nextStarted = true }, noop)
+        queue.abort()
+
+        assert.isTrue(nextStarted)
+    })
+
     it('abort calls abort on the current request', function () {
         let div = createProcessedHTML('<div hx-get="/test"></div>')
         let queue = htmx.__getRequestQueue(div)

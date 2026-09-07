@@ -123,6 +123,8 @@ var htmx = (() => {
 
         abort() {
             this.#current?.abort?.()
+            this.#current = null
+            this.#queue.shift()?.()
         }
     }
 
@@ -548,7 +550,7 @@ var htmx = (() => {
             let replaced = false
             if (requestQueue.admit(
                 syncStrategy,
-                () => this.__issueRequest(ctx), // run when ready
+                () => this.__issueRequest(ctx),  // run when ready
                 () => { replaced = true; ctx.request?.abort?.() } // abort if replaced
             ) !== "run") return
 
