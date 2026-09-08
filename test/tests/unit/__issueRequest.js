@@ -321,41 +321,43 @@ describe('__issueRequest unit tests', function() {
         assert.isTrue(request2Started)
     })
 
-    it('aborts request after timeout fires', async function () {
+    it('aborts request after timeout fires with TimeoutError', async function () {
         let div = createProcessedHTML('<div hx-get="/test" hx-swap="none" hx-config="timeout:50"></div>')
         let ctx = htmx.__createRequestContext(div, new Event('click'))
 
         ctx.fetch = (url, opts) => new Promise((_, reject) => {
             opts.signal.addEventListener('abort', () => {
-                reject(new DOMException('The operation was aborted', 'AbortError'))
+                reject(opts.signal.reason)
             })
         })
 
-        let errorFired = false
-        div.addEventListener('htmx:error', () => errorFired = true)
+        let capturedError = null
+        div.addEventListener('htmx:error', (e) => capturedError = e.detail.error)
 
         await htmx.__issueRequest(ctx)
-        assert.isTrue(errorFired)
         assert.isTrue(ctx.request.signal.aborted)
+        assert.equal(ctx.request.signal.reason.name, 'TimeoutError')
+        assert.equal(capturedError.name, 'TimeoutError')
     })
 
-    it('htmx:abort event aborts in-flight request', async function () {
+    it('htmx:abort event aborts in-flight request with AbortError', async function () {
         let div = createProcessedHTML('<div hx-get="/test" hx-swap="none"></div>')
         let ctx = htmx.__createRequestContext(div, new Event('click'))
 
         ctx.fetch = (url, opts) => new Promise((_, reject) => {
             setTimeout(() => htmx.trigger(div, 'htmx:abort'), 10)
             opts.signal.addEventListener('abort', () => {
-                reject(new DOMException('The operation was aborted', 'AbortError'))
+                reject(opts.signal.reason)
             })
         })
 
-        let errorFired = false
-        div.addEventListener('htmx:error', () => errorFired = true)
+        let capturedError = null
+        div.addEventListener('htmx:error', (e) => capturedError = e.detail.error)
 
         await htmx.__issueRequest(ctx)
-        assert.isTrue(errorFired)
         assert.isTrue(ctx.request.signal.aborted)
+        assert.equal(ctx.request.signal.reason.name, 'AbortError')
+        assert.equal(capturedError.name, 'AbortError')
     })
 
     it('does not crash when scroll target selector matches nothing', async function () {
