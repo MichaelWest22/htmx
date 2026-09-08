@@ -107,6 +107,63 @@ describe('hx-trigger attribute', function() {
         find('#d3').innerText.should.equal('bar')
     })
 
+    it('every polling fires requests on interval', async function () {
+        mockResponse('GET', '/test', 'Polled!')
+        let div = createProcessedHTML('<div hx-get="/test" hx-trigger="every 5ms">Not Polled</div>')
+        await htmx.timeout(20)
+        await forRequest()
+        div.innerText.should.equal('Polled!')
+    })
+
+    it('every polling with filter only fires when condition is true', async function () {
+        mockResponse('GET', '/test', 'Polled!')
+        window.pollCondition = false
+        let div = createProcessedHTML('<div hx-get="/test" hx-trigger="every[window.pollCondition] 5ms">Not Polled</div>')
+        await htmx.timeout(20)
+        fetchMock.calls.length.should.equal(0)
+        window.pollCondition = true
+        await htmx.timeout(20)
+        await forRequest()
+        div.innerText.should.equal('Polled!')
+        delete window.pollCondition
+    })
+
+    it('every polling with for: stops after duration', async function () {
+        mockResponse('GET', '/test', 'Polled!')
+        createProcessedHTML('<div hx-get="/test" hx-trigger="every 5ms for:15ms">Not Polled</div>')
+        await htmx.timeout(50)
+        let count = fetchMock.calls.length
+        count.should.be.greaterThan(0)
+        await htmx.timeout(30)
+        fetchMock.calls.length.should.equal(count)
+    })
+
+    it('htmx:stop:poll stops polling', async function () {
+        mockResponse('GET', '/test', 'Polled!')
+        let div = createProcessedHTML('<div hx-get="/test" hx-trigger="every 5ms">Not Polled</div>')
+        await htmx.timeout(20)
+        await forRequest()
+        htmx.trigger(div, 'htmx:stop:poll')
+        let count = fetchMock.calls.length
+        await htmx.timeout(30)
+        fetchMock.calls.length.should.equal(count)
+    })
+
+    it('htmx:start:poll restarts polling after stop', async function () {
+        mockResponse('GET', '/test', 'Polled!')
+        let div = createProcessedHTML('<div hx-get="/test" hx-trigger="every 5ms">Not Polled</div>')
+        await htmx.timeout(20)
+        await forRequest()
+        htmx.trigger(div, 'htmx:stop:poll')
+        let count = fetchMock.calls.length
+        await htmx.timeout(30)
+        fetchMock.calls.length.should.equal(count)
+        htmx.trigger(div, 'htmx:start:poll')
+        await htmx.timeout(20)
+        await forRequest()
+        fetchMock.calls.length.should.be.greaterThan(count)
+    })
+
     it('load event triggers on element creation', async function () {
         debug(this)
         mockResponse('GET', '/test', 'Loaded!')

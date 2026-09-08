@@ -826,11 +826,19 @@ var htmx = (() => {
 
                 // Every: set up interval
                 if (eventName === "every") {
-                    let interval = Object.keys(spec).find(k => k !== 'name');
-                    spec.interval = setInterval(() => {
-                        if (elt.isConnected) this.__trigger(elt, 'every', {}, false);
-                        else clearInterval(spec.interval);
-                    }, this.parseInterval(interval));
+                    let interval = this.parseInterval(Object.keys(spec).find(k => k !== 'name'));
+                    let count = spec.for ? Math.round(this.parseInterval(spec.for) / interval) : null;
+                    let stop = () => clearInterval(spec.interval);
+                    let start = () => {
+                        stop();
+                        elt.addEventListener('htmx:stop:poll', stop, {once: true});
+                        spec.interval = setInterval(() => {
+                            if (!elt.isConnected || (count != null && --count < 0)) { stop(); return; }
+                            this.__trigger(elt, 'every', {}, false);
+                        }, interval);
+                    };
+                    elt.addEventListener('htmx:start:poll', start);
+                    start();
                 }
 
                 // Load: fire immediately, no listener needed
