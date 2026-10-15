@@ -105,38 +105,12 @@ To add a filter to polling, add it after the interval:
 <div hx-trigger="every[someConditional] 1s" hx-get="/updates">...</div>
 ```
 
-Use `for:<duration>` as a timeout safety net. The typical patterns are:
+Use `for:<duration>` to set a hard deadline on polling. See [`for`](#forduration) below.
 
-**Background job polling** — server sends `HX-Trigger: htmx:stop:poll` when done, `for:` is the hard deadline if it never does:
-
-```html
-<div hx-get="/jobs/123/status"
-     hx-trigger="every 2s for:60s"
-     hx-swap="outerHTML">
-  Processing...
-</div>
-```
-
-**Resilient load** — retries on server errors instead of failing silently, but gives up after a limit:
-
-```html
-<div hx-get="/widget"
-     hx-trigger="every 2s for:30s"
-     hx-swap="outerHTML">
-  Loading...
-</div>
-```
-
-In both cases the server stops polling naturally: return the replacement content *without* the `every` trigger and htmx swaps it in, ending the interval.
-
-Polling can also be controlled at any time via events on the element:
-
-- `htmx:stop:poll` — stops polling
-- `htmx:start:poll` — restarts polling
+Polling can also be stopped at any time by dispatching `htmx:stop:poll` on the element:
 
 ```js
 htmx.trigger(myEl, 'htmx:stop:poll')
-htmx.trigger(myEl, 'htmx:start:poll')
 ```
 
 ## Event Modifiers
@@ -189,6 +163,23 @@ Fires, then ignores further events for the given interval.
 ```html
 <div hx-trigger="scroll throttle:500ms" hx-get="...">...</div>
 ```
+
+### `for:<duration>`
+
+Stops listening after the given duration. Works with any trigger, but pairs especially well with `every`.
+
+**Resilient load** — fires immediately, retries on interval, but gives up after a time limit:
+
+```html
+<div hx-get="/widget"
+     hx-trigger="load, every 2s for:30s"
+     hx-swap="outerHTML">
+  Loading...
+</div>
+```
+
+The server stops polling naturally by returning content *without* the `every` trigger, which htmx swaps in and ends the interval.
+
 
 ### `from:<selector>`
 

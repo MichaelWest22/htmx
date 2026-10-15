@@ -782,7 +782,9 @@ var htmx = (() => {
                 }
 
                 // Guarded: pre-timing checks that determine if event should proceed
+                if (spec.for) spec.forExpiry = Date.now() + this.parseInterval(spec.for);
                 spec.handler = (evt) => {
+                    if (spec.forExpiry && Date.now() > spec.forExpiry) return;
                     if (spec.from === 'self' && evt.target !== elt) return;
                     if (spec.from === 'outside' && elt.contains(evt.target)) return;
                     if (spec.target && !evt.target?.matches?.(spec.target)) return;
@@ -826,19 +828,13 @@ var htmx = (() => {
 
                 // Every: set up interval
                 if (eventName === "every") {
-                    let interval = this.parseInterval(Object.keys(spec).find(k => k !== 'name'));
-                    let count = spec.for ? Math.round(this.parseInterval(spec.for) / interval) : null;
+                    let interval = Object.keys(spec).find(k => k !== 'name');
                     let stop = () => clearInterval(spec.interval);
-                    let start = () => {
-                        stop();
-                        elt.addEventListener('htmx:stop:poll', stop, {once: true});
-                        spec.interval = setInterval(() => {
-                            if (!elt.isConnected || (count != null && --count < 0)) { stop(); return; }
-                            this.__trigger(elt, 'every', {}, false);
-                        }, interval);
-                    };
-                    elt.addEventListener('htmx:start:poll', start);
-                    start();
+                    elt.addEventListener('htmx:stop:poll', stop, {once: true});
+                    spec.interval = setInterval(() => {
+                        if (elt.isConnected) this.__trigger(elt, 'every', {}, false);
+                        else stop();
+                    }, this.parseInterval(interval));
                 }
 
                 // Load: fire immediately, no listener needed
