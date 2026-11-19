@@ -5,6 +5,8 @@
 //==========================================================
 (function () {
 
+    const META_CSP_SELECTOR = 'meta[http-equiv="Content-Security-Policy"]'
+
     let api
 
     // Appends a new head node, returning a promise for render-critical resources
@@ -68,6 +70,8 @@
                 // put all new head elements into a Map, by their outerHTML
                 let srcToNewHeadNodes = new Map()
                 for (const newHeadChild of newHeadTag.children) {
+                    if (newHeadChild.matches(META_CSP_SELECTOR)) continue
+
                     srcToNewHeadNodes.set(newHeadChild.outerHTML, newHeadChild)
                 }
 
@@ -78,6 +82,7 @@
 
                 // get the current head
                 for (const currentHeadElt of currentHead.children) {
+                    if (currentHeadElt.matches(META_CSP_SELECTOR)) continue
 
                     // If the current head element is in the map
                     let inNewContent = srcToNewHeadNodes.has(currentHeadElt.outerHTML)
