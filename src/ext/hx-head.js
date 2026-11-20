@@ -12,7 +12,6 @@
     function appendNode(newNode) {
         let newElt = document.createElement(newNode.tagName)
         for (const attr of newNode.attributes) newElt.setAttribute(attr.name, attr.value)
-        if (newNode.tagName === 'SCRIPT' && htmx.config.inlineScriptNonce) newElt.nonce = htmx.config.inlineScriptNonce
         newElt.textContent = newNode.textContent
 
         // stylesheet: await CSSOM or content will flash unstyled
@@ -68,6 +67,10 @@
                 // put all new head elements into a Map, by their outerHTML
                 let srcToNewHeadNodes = new Map()
                 for (const newHeadChild of newHeadTag.children) {
+                    if (newHeadChild.tagName === 'SCRIPT' && htmx.config.inlineScriptNonce) {
+                        // Use setAttribute so that outerHTML is also affected
+                        newHeadChild.setAttribute('nonce', htmx.config.inlineScriptNonce)
+                    }
                     srcToNewHeadNodes.set(newHeadChild.outerHTML, newHeadChild)
                 }
 
